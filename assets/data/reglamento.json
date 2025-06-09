@@ -1,0 +1,336 @@
+[
+  {
+    "id": "ro-1",
+    "numero": "Artículo 1",
+    "titulo": "Organización y Competencia del Instituto",
+    "contenido": "El presente Reglamento establece las bases de organización y distribución de competencias entre las distintas dependencias politécnicas, órganos de apoyo y organismos auxiliares que conforman la estructura orgánico-funcional del Instituto Politécnico Nacional. Para el cumplimiento de sus funciones, el Instituto tiene la atribución de adoptar la organización académica y administrativa que estime conveniente; sus autoridades ejercerán las facultades, obligaciones y atribuciones que les confieren la Ley Orgánica, el Reglamento Interno, el presente ordenamiento y las demás disposiciones aplicables.",
+    "categoria": "Reglamento Orgánico - De la Competencia y Organización del Instituto",
+    "palabrasClave": [
+      "organización",
+      "competencia",
+      "estructura",
+      "dependencias politécnicas",
+      "facultades",
+      "atribuciones"
+    ],
+    "resumen": "Establece las bases de organización, distribución de competencias y la estructura orgánico-funcional del IPN.",
+    "prioridad": 10,
+    "fuente": "Gaceta Politécnica Extraordinaria 1541, 2 de marzo de 2020"
+  },
+  {
+    "id": "ro-2",
+    "numero": "Artículo 2",
+    "titulo": "Estructura del Instituto y Asistencia al Director General",
+    "contenido": "Al frente del Instituto Politécnico Nacional estará el titular de la Dirección General, quien para el estudio, planeación y desahogo de los asuntos de su competencia se asistirá de las unidades administrativas, unidades académicas, órganos de apoyo y organismos auxiliares.",
+    "categoria": "Reglamento Orgánico - De la Competencia y Organización del Instituto",
+    "palabrasClave": [
+      "director general",
+      "unidades administrativas",
+      "unidades académicas",
+      "órganos de apoyo",
+      "organismos auxiliares"
+    ],
+    "resumen": "Define que el Director General encabeza el Instituto y se apoya en unidades administrativas, académicas, órganos y organismos para su gestión.",
+    "prioridad": 15,
+    "fuente": "Gaceta Politécnica Extraordinaria 1541, 2 de marzo de 2020"
+  },
+  {
+    "id": "ro-6",
+    "numero": "Artículo 6",
+    "titulo": "Atribuciones del Titular de la Dirección General",
+    "contenido": "El Titular de la Dirección General tendrá las siguientes atribuciones: Establecer y dirigir las políticas del Instituto; proponer anteproyectos de ley; nombrar titulares; suscribir condiciones de trabajo; aprobar manuales; adscribir dependencias; establecer unidades y comisiones; promover la vinculación y cooperación nacional e internacional; aprobar programas de intercambio; concertar acciones con sectores; ordenar brigadas de servicio social; determinar equivalencia y revalidación; aprobar difusión; resolver dudas del reglamento; y ejercer demás facultades legales.",
+    "categoria": "Reglamento Orgánico - Del Titular de la Dirección General",
+    "palabrasClave": [
+      "director general",
+      "atribuciones",
+      "facultades",
+      "políticas",
+      "nombramientos",
+      "convenios",
+      "vinculación",
+      "revalidación"
+    ],
+    "resumen": "Enumera las amplias facultades y atribuciones del Director General, desde dirigir políticas y nombrar personal hasta aprobar programas y representar al Instituto.",
+    "prioridad": 20,
+    "fuente": "Gaceta Politécnica Extraordinaria 1541, 2 de marzo de 2020"
+  },
+  {
+    "id": "ri-1",
+    "numero": "Artículo 1",
+    "titulo": "Naturaleza y Alcance del Reglamento Interno",
+    "contenido": "El presente Reglamento deriva de la Ley Orgánica del Instituto Politécnico Nacional, es de orden general y de él se desprenden los reglamentos específicos, acuerdos y demás disposiciones normativas internas que rigen la organización y el funcionamiento de las actividades académicas y administrativas institucionales.",
+    "categoria": "Reglamento Interno - Disposiciones Generales",
+    "palabrasClave": [
+      "reglamento interno",
+      "ley orgánica",
+      "orden general",
+      "normatividad",
+      "organización",
+      "funcionamiento"
+    ],
+    "resumen": "Establece que este reglamento deriva de la Ley Orgánica y rige la organización y funcionamiento académico y administrativo del IPN.",
+    "prioridad": 10,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "ri-9",
+    "numero": "Artículo 9",
+    "titulo": "Composición de la Comunidad Politécnica",
+    "contenido": "La comunidad politécnica está conformada por los alumnos, egresados, personal académico, personal no docente y personal directivo del Instituto y de sus organismos auxiliares.",
+    "categoria": "Reglamento Interno - Disposiciones Generales",
+    "palabrasClave": [
+      "comunidad politécnica",
+      "alumnos",
+      "egresados",
+      "personal académico",
+      "personal no docente",
+      "personal directivo"
+    ],
+    "resumen": "Define los integrantes de la comunidad politécnica.",
+    "prioridad": 30,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "ri-77",
+    "numero": "Artículo 77",
+    "titulo": "Definición de Alumno",
+    "contenido": "Es alumno la persona inscrita en cualesquiera de los programas académicos y los respectivos programas de estudio que se imparten en las escuelas, centros o unidades de enseñanza y de investigación referidos en el artículo 5º de este Reglamento.",
+    "categoria": "Reglamento Interno - Título Tercero - De los Alumnos",
+    "palabrasClave": [
+      "alumno",
+      "inscripción",
+      "programa académico",
+      "escuela",
+      "centro",
+      "unidad"
+    ],
+    "resumen": "Define formalmente quién es considerado alumno del Instituto Politécnico Nacional.",
+    "prioridad": 40,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "ri-106",
+    "numero": "Artículo 106",
+    "titulo": "Derechos de los Alumnos",
+    "contenido": "Son derechos de los alumnos: Obtener inscripción o reinscripción; Recibir educación en igualdad de circunstancias; Cursar los estudios de conformidad con el plan vigente; Recibir el número de clases previstas; Recibir información oportuna; Solicitar becas y estímulos; Votar y ser votados en cuerpos colegiados; Participar en procesos de auscultación; Participar en procesos de otorgamiento de reconocimientos; Participar en eventos académicos, científicos, culturales y deportivos; Acceder a las instalaciones y servicios; Ejercer el derecho de petición; Obtener el reconocimiento de sus organizaciones; Recibir orientación del Comité de Atención de los Derechos de los Alumnos; Ejercer la defensa de sus derechos; y los demás que se deriven de la normatividad.",
+    "categoria": "Reglamento Interno - Título Tercero - De los Alumnos - De los Derechos",
+    "palabrasClave": [
+      "derechos",
+      "alumnos",
+      "educación",
+      "inscripción",
+      "becas",
+      "votar",
+      "participar",
+      "petición"
+    ],
+    "resumen": "Enumera los 16 derechos fundamentales de los alumnos, abarcando aspectos académicos, de participación, de servicios y de defensa.",
+    "prioridad": 25,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "ri-107",
+    "numero": "Artículo 107",
+    "titulo": "Obligaciones de los Alumnos",
+    "contenido": "Son obligaciones de los alumnos: I. Conocer y cumplir la Ley Orgánica, del presente Reglamento y los demás ordenamientos jurídicos y administrativos internos aplicables; II. Observar, en todo momento, un comportamiento que enaltezca el nombre y la calidad académica del Instituto; III. Realizar oportunamente los trámites escolares; IV. Asistir con puntualidad y constancia a sus clases; V. Conservar la calidad de alumno en situación regular; VI. Asistir y participar en las prácticas y visitas escolares, técnicas y profesionales; VII. Portar la credencial de estudiante y utilizarla de forma personalísima; VIII. Guardar respeto a los miembros de la comunidad politécnica; IX. Evitar cualquier acto de violencia; X. Coadyuvar a la conservación de los bienes del Instituto; XI. Cumplir con el servicio social; XII. Desempeñar con responsabilidad los cargos de consejero; y XIII. Las demás que se deriven de la normatividad.",
+    "categoria": "Reglamento Interno - Título Tercero - De los Alumnos - De las Obligaciones",
+    "palabrasClave": [
+      "obligaciones",
+      "alumnos",
+      "cumplir",
+      "asistir a clases",
+      "respeto",
+      "violencia",
+      "servicio social",
+      "conservación"
+    ],
+    "resumen": "Detalla las 13 obligaciones principales de los alumnos, incluyendo el cumplimiento de normas, la asistencia, el respeto y la conservación del patrimonio institucional.",
+    "prioridad": 25,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "ri-108",
+    "numero": "Artículo 108",
+    "titulo": "Causas de Responsabilidad de los Alumnos",
+    "contenido": "Son causas de responsabilidad de los alumnos las siguientes: I. Incumplir con las obligaciones; II. Falsificar documentos; III. Apoderarse indebidamente de bienes; IV. Utilizar para fines distintos a los académicos el nombre y símbolos del Instituto; V. Portar armas; VI. Recurrir a la violencia; VII. Asumir actitudes irrespetuosas; VIII. Incitar a otros a violar la normatividad; IX. Dañar, destruir o deteriorar bienes del Instituto; X. Explotar sin autorización derechos de autor o patentes; XI. Impedir el ejercicio de funciones; XII. Suplantar o permitir ser suplantado; XIII. Distribuir, poseer o consumir psicotrópicos, estupefacientes o bebidas embriagantes; XIV. Realizar cualquier actividad que atente contra el orden y la dignidad del Instituto.",
+    "categoria": "Reglamento Interno - Título Tercero - De los Alumnos - De las Responsabilidades",
+    "palabrasClave": [
+      "responsabilidad",
+      "sanciones",
+      "incumplimiento",
+      "falsificación",
+      "violencia",
+      "daño",
+      "drogas",
+      "alcohol"
+    ],
+    "resumen": "Lista las 14 causas de responsabilidad que pueden derivar en sanciones para los alumnos, como falsificación, violencia, daño a la propiedad y consumo de sustancias.",
+    "prioridad": 35,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "ri-110",
+    "numero": "Artículo 110",
+    "titulo": "Tipos de Sanciones a los Alumnos",
+    "contenido": "Los alumnos que incurran en cualesquiera de las causas de responsabilidad previstas en el presente Reglamento se harán acreedores, según corresponda, a las siguientes sanciones: I. Apercibimiento; II. Amonestación escrita; III. Suspensión temporal o definitiva de su calidad de becario; IV. Suspensión del derecho a cursar una asignatura, hasta por un semestre; V. Baja temporal de la escuela, hasta por un semestre; y VI. Baja definitiva del Instituto Politécnico Nacional.",
+    "categoria": "Reglamento Interno - Título Tercero - De los Alumnos - De las Sanciones",
+    "palabrasClave": [
+      "sanciones",
+      "apercibimiento",
+      "amonestación",
+      "suspensión",
+      "baja temporal",
+      "baja definitiva"
+    ],
+    "resumen": "Establece la escala de sanciones aplicables a los alumnos, desde un apercibimiento hasta la baja definitiva del Instituto.",
+    "prioridad": 35,
+    "fuente": "Publicado en Gaceta Politécnica, Número Extraordinario, 30 de noviembre de 1998"
+  },
+  {
+    "id": "rgb-1",
+    "numero": "Artículo 1",
+    "titulo": "Objeto del Reglamento de Becas",
+    "contenido": "El presente Reglamento tiene por objeto regular todos los Programas de Becas que oferta el Instituto Politécnico Nacional, en los niveles medio superior, superior y posgrado, en las modalidades escolarizada, no escolarizada y mixta, así como establecer las disposiciones aplicables para el funcionamiento del Sistema Institucional de Becas.",
+    "categoria": "Reglamento General de Becas - Disposiciones Generales",
+    "palabrasClave": [
+      "becas",
+      "reglamento",
+      "programas de becas",
+      "niveles",
+      "modalidades",
+      "sistema institucional"
+    ],
+    "resumen": "Define el objetivo del reglamento, que es regular todos los programas de becas del IPN en todos sus niveles y modalidades.",
+    "prioridad": 20,
+    "fuente": "Gaceta Politécnica Extraordinaria 1805, 9 de julio de 2024"
+  },
+  {
+    "id": "rgb-24",
+    "numero": "Artículo 24",
+    "titulo": "Causas de Revocación de las Becas",
+    "contenido": "El Comité General de Becas y los Subcomités de Becas de las Dependencias Politécnicas podrán revocar las becas otorgadas en los siguientes casos: I. Incumplir cualquiera de los requisitos, obligaciones y condiciones previstas; II. Ser sujeto de una baja temporal o definitiva; III. Cuando la persona becaria entregue la Carta Renuncia; IV. Ser sancionada o sancionado en su calidad de persona becaria o aspirante; y V. Por fallecimiento del aspirante, previo a la dispersión de los recursos.",
+    "categoria": "Reglamento General de Becas - De la Revocación de las Becas",
+    "palabrasClave": [
+      "revocación",
+      "beca",
+      "incumplimiento",
+      "baja temporal",
+      "baja definitiva",
+      "renuncia",
+      "sanción",
+      "fallecimiento"
+    ],
+    "resumen": "Enumera las cinco causas por las cuales una beca puede ser revocada, incluyendo incumplimiento, baja escolar, renuncia, sanción o fallecimiento.",
+    "prioridad": 45,
+    "fuente": "Gaceta Politécnica Extraordinaria 1805, 9 de julio de 2024"
+  },
+  {
+    "id": "rvoe-1",
+    "numero": "Artículo 1",
+    "titulo": "Objeto del Reglamento de RVOE",
+    "contenido": "El presente ordenamiento tiene por objeto establecer las disposiciones, requisitos, y procedimientos que tiene el Instituto Politécnico Nacional para el otorgamiento, el refrendo y el retiro o revocación del Reconocimiento de Validez Oficial de Estudios a instituciones particulares en los niveles medio superior y superior, por lo que su observancia es obligatoria y general para los particulares solicitantes, aquellas con Acuerdo de Reconocimiento de Validez Oficial de Estudios (RVOE), y todas las dependencias del Instituto Politécnico Nacional.",
+    "categoria": "Reglamento de RVOE - Disposiciones Generales",
+    "palabrasClave": [
+      "rvoe",
+      "validez oficial",
+      "instituciones particulares",
+      "otorgamiento",
+      "refrendo",
+      "revocación"
+    ],
+    "resumen": "Define el objeto del reglamento para regular el Reconocimiento de Validez Oficial de Estudios (RVOE) que el IPN otorga a instituciones particulares.",
+    "prioridad": 20,
+    "fuente": "Gaceta Politécnica Extraordinaria 1862, 6 de mayo de 2025"
+  },
+  {
+    "id": "rvoe-77",
+    "numero": "Artículo 77",
+    "titulo": "Infracciones Específicas del Particular con RVOE",
+    "contenido": "Son consideradas para el IPN, como casos específicos de infracción del particular con Acuerdo de RVOE de nivel medio superior y superior las siguientes: I. No cumplir con el calendario de entrega de documentos; II. Incumplir los requisitos técnico-pedagógicos; III. No cumplir con la capacitación del personal docente; IV. No informar la baja de personal docente; V. No contar con autorización para impartir unidades de aprendizaje; VI. Omitir informar sobre modificaciones; VII. No realizar trámites de gestión escolar correctamente; VIII. No cumplir con los planes y programas del IPN; IX. No cumplir con la actualización del rediseño; X. No cumplir con el pago de cuotas; XI. Presencia de bebidas embriagantes o drogas; XII. Falta de matrícula en primer semestre; XIII. Uso indebido de marcas o símbolos del IPN.",
+    "categoria": "Reglamento de RVOE - Infracciones y Sanciones",
+    "palabrasClave": [
+      "infracciones",
+      "rvoe",
+      "sanciones",
+      "incumplimiento",
+      "documentos",
+      "requisitos",
+      "cuotas",
+      "drogas",
+      "marcas ipn"
+    ],
+    "resumen": "Lista las 13 infracciones específicas que pueden cometer las instituciones con RVOE, desde incumplimientos administrativos hasta el uso indebido de la marca IPN.",
+    "prioridad": 45,
+    "fuente": "Gaceta Politécnica Extraordinaria 1862, 6 de mayo de 2025"
+  },
+  {
+    "id": "rdmp-1",
+    "numero": "Artículo 1",
+    "titulo": "Objeto del Reglamento de Distinciones",
+    "contenido": "El presente Reglamento tiene por objeto regular el otorgamiento de las distinciones al mérito politécnico que el Instituto Politécnico Nacional confiere a aquellas personas que por sus méritos se hagan acreedoras a las mismas.",
+    "categoria": "Reglamento de Distinciones al Mérito Politécnico - Disposiciones Generales",
+    "palabrasClave": [
+      "distinciones",
+      "mérito politécnico",
+      "reglamento",
+      "premios",
+      "reconocimiento"
+    ],
+    "resumen": "Establece el objeto del reglamento, que es regular cómo el IPN otorga distinciones al mérito politécnico.",
+    "prioridad": 20,
+    "fuente": "Gaceta Politécnica Extraordinaria 1854, 11 de abril de 2025"
+  },
+  {
+    "id": "rdmp-18",
+    "numero": "Artículo 18",
+    "titulo": "Tipos de Distinciones al Mérito Politécnico",
+    "contenido": "En reconocimiento al mérito politécnico del profesorado, personas investigadoras, alumnado, personas egresadas, y demás personas a que se contrae este ordenamiento, el IPN instituye las siguientes distinciones: I. Doctorado Honoris Causa; II. Presea Lázaro Cárdenas; III. Presea Carlos Vallejo Márquez; IV. Presea Juan de Dios Bátiz; V. Diploma de Maestro Honorario; VI. Diploma de Maestro Emérito; VII. Diploma de Maestro Decano; VIII. Diploma a la Investigación; IX. Diploma a la Cultura; X. Diploma al Deporte; XI. Diploma de Eficiencia y Eficacia, y XII. Las demás que apruebe el Consejo.",
+    "categoria": "Reglamento de Distinciones al Mérito Politécnico - Generalidades",
+    "palabrasClave": [
+      "distinciones",
+      "honoris causa",
+      "presea lázaro cárdenas",
+      "presea",
+      "diploma",
+      "maestro emérito"
+    ],
+    "resumen": "Enumera los 12 tipos de distinciones que el IPN otorga, incluyendo el Doctorado Honoris Causa, diversas preseas y diplomas.",
+    "prioridad": 30,
+    "fuente": "Gaceta Politécnica Extraordinaria 1854, 11 de abril de 2025"
+  },
+  {
+    "id": "rdmp-24",
+    "numero": "Artículo 24",
+    "titulo": "Presea Lázaro Cárdenas",
+    "contenido": "La Presea Lázaro Cárdenas es el reconocimiento al mérito académico, a la trayectoria profesional o a los servicios relevantes prestados al Instituto Politécnico Nacional.",
+    "categoria": "Reglamento de Distinciones al Mérito Politécnico - De las Preseas",
+    "palabrasClave": [
+      "presea lázaro cárdenas",
+      "mérito académico",
+      "trayectoria profesional",
+      "servicios relevantes"
+    ],
+    "resumen": "Define la Presea Lázaro Cárdenas como el máximo reconocimiento al mérito académico, trayectoria profesional o servicios relevantes al IPN.",
+    "prioridad": 35,
+    "fuente": "Gaceta Politécnica Extraordinaria 1854, 11 de abril de 2025"
+  },
+  {
+    "id": "rpd-primero",
+    "numero": "Punto de Acuerdo Primero",
+    "titulo": "Acumulación de U.P. por diversas funciones docentes",
+    "contenido": "Se reforman las Tablas número 1 y número 2, y lo contemplado en el Título I 'Disposiciones Generales', Capítulo I 'Generalidades', artículo 7 fracciones VIII y IX del Reglamento de Promoción Docente. Para la acumulación de 100 U.P. en el desarrollo de diversas funciones, que se imparten en la Tabla 1, las funciones de docencia en cualquiera de las modalidades educativas consideradas en los programas académicos se imparten; la de investigación, superación académica, actividades complementarias, de apoyo a la docencia y la investigación, y actividades de extensión, integración y difusión de la ciencia y la cultura. Para la promoción por obtención de un nivel académico el docente deberá cubrir la escolaridad señalada en la Tabla 2, de acuerdo con la categoría académica dictaminada, y cumplir con la totalidad de los requisitos para la promoción, en las modalidades educativas consideradas en los programas académicos que se imparten en el Instituto.",
+    "categoria": "Reglamento de Promoción Docente - Puntos de Acuerdo",
+    "palabrasClave": [
+      "promoción docente",
+      "u.p.",
+      "unidades de promoción",
+      "tablas",
+      "docencia",
+      "investigación",
+      "superación académica"
+    ],
+    "resumen": "Reforma las tablas de acumulación de Unidades de Promoción (U.P.) para docentes, detallando las funciones válidas como docencia, investigación, superación académica y extensión, y los requisitos para la promoción por nivel académico.",
+    "prioridad": 40,
+    "fuente": "Gaceta Politécnica Extraordinaria 1511, 15 de octubre de 2019"
+  }
+]

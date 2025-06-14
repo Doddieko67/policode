@@ -10,6 +10,10 @@ import 'package:policode/screens/create_post_screen.dart';
 import 'package:policode/screens/articles_screen.dart';
 import 'package:policode/screens/article_detail_screen.dart';
 import 'package:policode/screens/admin_screen.dart';
+import 'package:policode/screens/reglamentos_screen.dart';
+import 'package:policode/screens/editor_screen.dart';
+import 'package:policode/screens/chats_list_screen.dart';
+import 'package:policode/screens/private_chat_screen.dart';
 import 'package:policode/services/firebase_config.dart';
 import 'firebase_options.dart'; // ← Configuración automática generada por flutterfire configure
 
@@ -124,6 +128,10 @@ class PoliCodeApp extends StatelessWidget {
       '/articles': (context) => const ArticlesScreen(),
       '/article-detail': (context) => const ArticleDetailScreen(),
       '/admin': (context) => const AdminScreen(),
+      '/reglamentos': (context) => const ReglamentosScreen(),
+      '/editor': (context) => const EditorScreen(),
+      '/chats': (context) => const ChatsListScreen(),
+      '/private-chat': (context) => const PrivateChatScreen(),
       '/historial': (context) => const HistorialScreen(),
     };
   }

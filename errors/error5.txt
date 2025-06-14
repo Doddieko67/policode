@@ -1,0 +1,35 @@
+❯ flutter run
+Launching lib/main.dart on SM A055M in debug mode...
+lib/screens/editor_screen.dart:189:13: Error: The method 'CustomTextFormField' isn't defined for the class '_EditorScreenState'.
+ - '_EditorScreenState' is from 'package:policode/screens/editor_screen.dart' ('lib/screens/editor_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'CustomTextFormField'.
+            CustomTextFormField(
+            ^^^^^^^^^^^^^^^^^^^
+lib/screens/editor_screen.dart:207:13: Error: The method 'CustomTextFormField' isn't defined for the class '_EditorScreenState'.
+ - '_EditorScreenState' is from 'package:policode/screens/editor_screen.dart' ('lib/screens/editor_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'CustomTextFormField'.
+            CustomTextFormField(
+            ^^^^^^^^^^^^^^^^^^^
+lib/screens/editor_screen.dart:225:13: Error: The method 'CustomTextFormField' isn't defined for the class '_EditorScreenState'.
+ - '_EditorScreenState' is from 'package:policode/screens/editor_screen.dart' ('lib/screens/editor_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'CustomTextFormField'.
+            CustomTextFormField(
+            ^^^^^^^^^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+Running Gradle task 'assembleDebug'...                           2,843ms
+Error: Gradle task assembleDebug failed with exit code 1

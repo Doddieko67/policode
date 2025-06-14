@@ -349,11 +349,48 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: CustomButton(
+                  text: 'Chats',
+                  onPressed: () => Navigator.pushNamed(context, '/chats'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.chat,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: CustomButton(
+                  text: 'Editor',
+                  onPressed: () => Navigator.pushNamed(context, '/editor'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.edit,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: CustomButton(
                   text: 'Artículos',
                   onPressed: () => Navigator.pushNamed(context, '/articles'),
                   type: ButtonType.secondary,
                   customColor: Colors.white,
                   icon: Icons.article,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: CustomButton(
+                  text: 'Reglamento',
+                  onPressed: () => Navigator.pushNamed(context, '/reglamentos'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.gavel,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),

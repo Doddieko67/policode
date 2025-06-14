@@ -284,7 +284,7 @@ class _ReglamentosScreenState extends State<ReglamentosScreen> {
                       ),
                     ),
                   ),
-                  if (articulo.prioridad != null && articulo.prioridad! > 5) ...[
+                  if (articulo.prioridad != null && articulo.prioridad! > 30) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

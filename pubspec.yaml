@@ -43,6 +43,14 @@ dependencies:
   flutter_gemini: ^3.0.0
   google_sign_in: ^6.3.0
   intl: ^0.20.2
+  firebase_storage: ^12.4.7
+  image_picker: ^1.1.2
+  video_player: ^2.9.1
+  file_picker: ^8.1.2
+  cached_network_image: ^3.4.1
+  path: ^1.9.0
+  url_launcher: ^6.3.1
+  timeago: ^3.7.1
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +62,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  change_app_package_name: ^1.5.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,0 +1,43 @@
+nifest.
+D/InsetsController( 4453): show(ime(), fromIme=true)
+W/RenderInspector( 4453): DequeueBuffer time out on com.example.policode/com.example.policode.MainActivity, count=2, avg=46 ms, max=60 ms.
+
+══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during layout:
+A RenderFlex overflowed by 22 pixels on the bottom.
+
+The relevant error-causing widget was:
+  Column Column:file:///home/mauchly/codes/flutter/policode/lib/screens/forum_screen.dart:295:14
+
+To inspect this widget in Flutter DevTools, visit:
+http://127.0.0.1:9100/#/inspector?uri=http%3A%2F%2F127.0.0.1%3A34409%2Fr8LZBLCoOts%3D%2F&inspectorRef=
+inspector-0
+
+The overflowing RenderFlex has an orientation of Axis.vertical.
+The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and
+black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
+Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the
+RenderFlex to fit within the available space instead of being sized to their natural size.
+This is considered an error condition because it indicates that there is content that cannot be
+seen. If the content is legitimately bigger than the available space, consider clipping it with a
+ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,
+like a ListView.
+The specific RenderFlex in question is: RenderFlex#3b780 relayoutBoundary=up1 OVERFLOWING:
+  creator: Column ← Center ← Semantics ← KeyedSubtree-[<0>] ← RepaintBoundary ← IndexedSemantics ←
+    _SelectionKeepAlive ← NotificationListener<KeepAliveNotification> ← KeepAlive ← AutomaticKeepAlive
+    ← KeyedSubtree-[Key <[<0>]>] ← _SliverFillViewportRenderObjectWidget ← ⋯
+  parentData: offset=Offset(50.4, 0.0) (can use size)
+  constraints: BoxConstraints(0.0<=w<=392.7, 0.0<=h<=183.2)
+  size: Size(291.9, 183.2)
+  direction: vertical
+  mainAxisAlignment: center
+  mainAxisSize: max
+  crossAxisAlignment: center
+  verticalDirection: down
+  spacing: 0.0
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+D/MIUIInput( 4453): [KeyEvent] ViewRootImpl windowName 'com.example.policode/com.example.policode.MainActivity', KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_BACK, scanCode=0, metaState=0, flags=0x48, repeatCount=0, eventTime=85299378000000, downTime=85299378000000, deviceId=-1, source=0x101, displayId=-1 }, phoneEventTime=22:18:31.114
+D/MIUIInput( 4453): [KeyEvent] ViewRootImpl windowName 'com.example.policode/com.example.policode.MainActivity', KeyEvent { action=ACTION_UP, keyCode=KEYCODE_BACK, scanCode=0, metaState=0, flags=0x48, repeatCount=0, eventTime=85299385000000, downTime=85299385000000, deviceId=-1, source=0x101, displayId=-1 }, phoneEventTime=22:18:31.121
+D/InputConnectionAdaptor( 4453): The input method toggled cursor monitoring off

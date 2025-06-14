@@ -1,0 +1,31 @@
+❯ flutter run -d SM
+Launching lib/main.dart on SM A055M in debug mode...
+lib/services/migration_service.dart:46:38: Error: The method 'toFirestore' isn't defined for the class 'Articulo'.
+ - 'Articulo' is from 'package:policode/models/articulo_model.dart' ('lib/models/articulo_model.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'toFirestore'.
+          batch.set(docRef, articulo.toFirestore());
+                                     ^^^^^^^^^^^
+lib/services/migration_service.dart:85:7: Error: No named parameter with the name 'resumen'.
+      resumen: jsonItem['resumen'] ?? '',
+      ^^^^^^^
+lib/models/articulo_model.dart:13:9: Context: Found this candidate, but the arguments don't match.
+  const Articulo({
+        ^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+Running Gradle task 'assembleDebug'...                              3.1s
+Error: Gradle task assembleDebug failed with exit code 1

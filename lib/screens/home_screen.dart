@@ -170,6 +170,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             itemBuilder: (context) => [
               PopupMenuItem(
+                value: 'admin',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.admin_panel_settings,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Administración'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
@@ -305,13 +319,45 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          CustomButton(
-            text: 'Empezar a Preguntar',
-            onPressed: () => Navigator.pushNamed(context, '/chat'),
-            type: ButtonType.secondary,
-            customColor: Colors.white,
-            icon: Icons.chat_bubble_outline,
-            borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  text: 'Preguntar',
+                  onPressed: () => Navigator.pushNamed(context, '/chat'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.chat_bubble_outline,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: CustomButton(
+                  text: 'Ver Foro',
+                  onPressed: () => Navigator.pushNamed(context, '/forum'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.forum,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  text: 'Artículos',
+                  onPressed: () => Navigator.pushNamed(context, '/articles'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.article,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -528,6 +574,9 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'settings':
         Navigator.pushNamed(context, '/settings');
+        break;
+      case 'admin':
+        Navigator.pushNamed(context, '/admin');
         break;
       case 'logout':
         _showLogoutDialog();

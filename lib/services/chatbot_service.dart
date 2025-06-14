@@ -3,6 +3,8 @@ import 'package:policode/models/chat_model.dart';
 import 'package:policode/models/usuario_model.dart';
 import 'flutter_gemini_service.dart'; // Importar el nuevo servicio
 import 'reglamento_service.dart';
+import 'forum_service.dart';
+import 'article_service.dart';
 
 /// Resultado de procesamiento del chatbot
 class ChatbotResult {
@@ -10,21 +12,25 @@ class ChatbotResult {
   final ChatMessage? mensaje;
   final String? error;
   final List<String>? articulosRelacionados;
+  final List<String>? postsRelacionados;
 
   const ChatbotResult({
     required this.success,
     this.mensaje,
     this.error,
     this.articulosRelacionados,
+    this.postsRelacionados,
   });
 
   factory ChatbotResult.success(
     ChatMessage mensaje, {
     List<String>? articulosRelacionados,
+    List<String>? postsRelacionados,
   }) => ChatbotResult(
     success: true,
     mensaje: mensaje,
     articulosRelacionados: articulosRelacionados,
+    postsRelacionados: postsRelacionados,
   );
 
   factory ChatbotResult.error(String error) =>
@@ -40,6 +46,8 @@ class ChatbotService {
   // CAMBIO PRINCIPAL: Usar FlutterGeminiService en lugar de GeminiService
   final FlutterGeminiService _geminiService = FlutterGeminiService();
   final ReglamentoService _reglamentoService = ReglamentoService();
+  final ForumService _forumService = ForumService();
+  final ArticleService _articleService = ArticleService();
 
   /// Procesar mensaje del usuario y generar respuesta
   Future<ChatbotResult> procesarMensaje({
@@ -75,6 +83,12 @@ class ChatbotService {
         umbralMinimo: 0.3,
       );
 
+      // Buscar posts relacionados en el foro
+      final postsRelacionados = await _forumService.searchPosts(mensajeUsuario);
+      
+      // Buscar artículos relacionados
+      final articulosNoticias = await _articleService.searchArticles(mensajeUsuario);
+
       // CAMBIO: Generar respuesta con flutter_gemini
       final geminiResponse = await _geminiService.askAboutReglamento(
         userQuestion: mensajeUsuario,
@@ -93,11 +107,40 @@ class ChatbotService {
         geminiResponse.content!,
       );
 
+      // Agregar información sobre contenido relacionado si existe
+      String respuestaConRelacionados = respuestaFormateada;
+      
+      if (postsRelacionados.isNotEmpty || articulosNoticias.isNotEmpty) {
+        respuestaConRelacionados += '\n\n📋 **Contenido relacionado:**\n';
+        
+        if (postsRelacionados.isNotEmpty) {
+          respuestaConRelacionados += '\n🗨️ **Posts del foro:**\n';
+          for (int i = 0; i < postsRelacionados.take(3).length; i++) {
+            final post = postsRelacionados[i];
+            respuestaConRelacionados += '• ${post.titulo}\n';
+          }
+        }
+        
+        if (articulosNoticias.isNotEmpty) {
+          respuestaConRelacionados += '\n📰 **Artículos:**\n';
+          for (int i = 0; i < articulosNoticias.take(3).length; i++) {
+            final articulo = articulosNoticias[i];
+            respuestaConRelacionados += '• ${articulo.titulo}\n';
+          }
+        }
+      }
+
       // Crear mensaje de respuesta del asistente
       final mensajeRespuesta = ChatMessage.asistente(
-        texto: respuestaFormateada,
+        texto: respuestaConRelacionados,
         metadatos: {
           'articulos_relacionados': articulosRelacionados
+              .map((a) => a.id)
+              .toList(),
+          'posts_relacionados': postsRelacionados
+              .map((p) => p.id)
+              .toList(),
+          'articulos_noticias': articulosNoticias
               .map((a) => a.id)
               .toList(),
           'consulta_original': mensajeUsuario,
@@ -110,6 +153,7 @@ class ChatbotService {
       return ChatbotResult.success(
         mensajeRespuesta,
         articulosRelacionados: articulosRelacionados.map((a) => a.id).toList(),
+        postsRelacionados: postsRelacionados.map((p) => p.id).toList(),
       );
     } catch (e) {
       return ChatbotResult.error('Error procesando mensaje: $e');

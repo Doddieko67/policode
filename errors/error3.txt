@@ -1,0 +1,37 @@
+❯ flutter run -d SM
+Changing current working directory to: /home/mauchly/codes/flutter/policode
+Launching lib/main.dart on SM A055M in debug mode...
+Invalid depfile: /home/mauchly/codes/flutter/policode/.dart_tool/flutter_build/6b42ce77e374fd82d2f55edcd9e04fc8/kernel_snapshot_program.d
+Invalid depfile: /home/mauchly/codes/flutter/policode/.dart_tool/flutter_build/6b42ce77e374fd82d2f55edcd9e04fc8/kernel_snapshot_program.d
+Invalid depfile: /home/mauchly/codes/flutter/policode/.dart_tool/flutter_build/6b42ce77e374fd82d2f55edcd9e04fc8/kernel_snapshot_program.d
+Invalid depfile: /home/mauchly/codes/flutter/policode/.dart_tool/flutter_build/6b42ce77e374fd82d2f55edcd9e04fc8/kernel_snapshot_program.d
+lib/screens/article_detail_screen.dart:301:10: Error: '_buildArticleContent' is already declared in this scope.
+  Widget _buildArticleContent(Article article) {
+         ^^^^^^^^^^^^^^^^^^^^
+lib/screens/article_detail_screen.dart:109:10: Context: Previous declaration of '_buildArticleContent'.
+  Widget _buildArticleContent() {
+         ^^^^^^^^^^^^^^^^^^^^
+lib/screens/article_detail_screen.dart:88:17: Error: Can't use '_buildArticleContent' because it is declared more than once.
+              : _buildArticleContent(),
+                ^
+lib/screens/article_detail_screen.dart:124:17: Error: Can't use '_buildArticleContent' because it is declared more than once.
+                _buildArticleContent(article),
+                ^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 10s
+Running Gradle task 'assembleDebug'...                             10.3s
+Error: Gradle task assembleDebug failed with exit code 1

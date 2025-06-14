@@ -1,4 +1,4 @@
-package com.example.policode
+package com.hiromi.policode
 
 import io.flutter.embedding.android.FlutterActivity
 

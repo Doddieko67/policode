@@ -5,6 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:policode/screens/articulo_detail_screen.dart';
+import 'package:policode/screens/forum_screen.dart';
+import 'package:policode/screens/create_post_screen.dart';
+import 'package:policode/screens/articles_screen.dart';
+import 'package:policode/screens/article_detail_screen.dart';
+import 'package:policode/screens/admin_screen.dart';
 import 'package:policode/services/firebase_config.dart';
 import 'firebase_options.dart'; // ← Configuración automática generada por flutterfire configure
 
@@ -110,10 +115,15 @@ class PoliCodeApp extends StatelessWidget {
       '/home': (context) => const HomeScreen(),
       '/chat': (context) => const ChatScreen(),
       '/notas': (context) => const NotasScreen(),
+      '/forum': (context) => const ForumScreen(),
+      '/create-post': (context) => const CreatePostScreen(),
       '/profile': (context) => const ProfileScreen(),
       '/settings': (context) => const SettingsScreen(),
       '/search': (context) => const SearchScreen(),
       '/articulo': (context) => const ArticuloDetailScreen(),
+      '/articles': (context) => const ArticlesScreen(),
+      '/article-detail': (context) => const ArticleDetailScreen(),
+      '/admin': (context) => const AdminScreen(),
       '/historial': (context) => const HistorialScreen(),
     };
   }

@@ -1,48 +1,48 @@
 {
   "project_info": {
-    "project_number": "671765559638",
-    "project_id": "foquita-hiromi",
-    "storage_bucket": "foquita-hiromi.firebasestorage.app"
+    "project_number": "409328556080",
+    "project_id": "foquita-hiromi-7ea96",
+    "storage_bucket": "foquita-hiromi-7ea96.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:671765559638:android:27adc0547eb0950094bef7",
+        "mobilesdk_app_id": "1:409328556080:android:b6e505ba4f4bec060335f5",
         "android_client_info": {
-          "package_name": "com.example.policode"
+          "package_name": "com.hiromi.policode"
         }
       },
       "oauth_client": [
         {
-          "client_id": "671765559638-ud77n9r99spc79qda87gt0loc30emrso.apps.googleusercontent.com",
+          "client_id": "409328556080-u47nhgubll8h91vdngbbtf6k468sdg0m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.policode",
+            "package_name": "com.hiromi.policode",
             "certificate_hash": "a5ad29cffaf99219ba45669208d88338772215f7"
           }
         },
         {
-          "client_id": "671765559638-8jpg4954c8fopfv5i6os0f00a4fqrkas.apps.googleusercontent.com",
+          "client_id": "409328556080-7o3cuosdaolv7oc39kdavmrpapa0nhis.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAgA-_0JzyvefctBd-hH4LOI-aDmVtwKCE"
+          "current_key": "AIzaSyAE-itrBc1YQbrhlTGjwC_Q8NxmMFbFT7s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "671765559638-8jpg4954c8fopfv5i6os0f00a4fqrkas.apps.googleusercontent.com",
+              "client_id": "409328556080-7o3cuosdaolv7oc39kdavmrpapa0nhis.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "671765559638-jpa3f9us42bh8cah7iveltktc66a8kq3.apps.googleusercontent.com",
+              "client_id": "409328556080-4k8oljf5bojbfrgp32j1lef57uvf103p.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.policode"
+                "bundle_id": "com.hiromi.policode"
               }
             }
           ]

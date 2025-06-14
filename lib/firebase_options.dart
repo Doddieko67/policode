@@ -41,48 +41,51 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC5brpZW1abtxCeLDK6qhapFXTbw-RQg3w',
-    appId: '1:671765559638:web:9577183de295f23394bef7',
-    messagingSenderId: '671765559638',
-    projectId: 'foquita-hiromi',
-    authDomain: 'foquita-hiromi.firebaseapp.com',
-    storageBucket: 'foquita-hiromi.firebasestorage.app',
-    measurementId: 'G-FDYG99ZEBN',
+    apiKey: 'AIzaSyDBchZz25rD7krunkIZgQu92-5_0C5X8GY',
+    appId: '1:409328556080:web:d9e0f79d5ea419130335f5',
+    messagingSenderId: '409328556080',
+    projectId: 'foquita-hiromi-7ea96',
+    authDomain: 'foquita-hiromi-7ea96.firebaseapp.com',
+    storageBucket: 'foquita-hiromi-7ea96.firebasestorage.app',
+    measurementId: 'G-Q8E233BRXT',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAgA-_0JzyvefctBd-hH4LOI-aDmVtwKCE',
-    appId: '1:671765559638:android:27adc0547eb0950094bef7',
-    messagingSenderId: '671765559638',
-    projectId: 'foquita-hiromi',
-    storageBucket: 'foquita-hiromi.firebasestorage.app',
+    apiKey: 'AIzaSyAE-itrBc1YQbrhlTGjwC_Q8NxmMFbFT7s',
+    appId: '1:409328556080:android:b6e505ba4f4bec060335f5',
+    messagingSenderId: '409328556080',
+    projectId: 'foquita-hiromi-7ea96',
+    storageBucket: 'foquita-hiromi-7ea96.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBEGL0TUhNpkOS6g3JUGKQOmwp11hIVp6Y',
-    appId: '1:671765559638:ios:77326b54bc4823da94bef7',
-    messagingSenderId: '671765559638',
-    projectId: 'foquita-hiromi',
-    storageBucket: 'foquita-hiromi.firebasestorage.app',
-    iosBundleId: 'com.example.policode',
+    apiKey: 'AIzaSyBg-vBUFXoR0bSZzSda4jhSnBJJ9zXslRg',
+    appId: '1:409328556080:ios:d634ed55b8b2c8900335f5',
+    messagingSenderId: '409328556080',
+    projectId: 'foquita-hiromi-7ea96',
+    storageBucket: 'foquita-hiromi-7ea96.firebasestorage.app',
+    iosClientId: '409328556080-4k8oljf5bojbfrgp32j1lef57uvf103p.apps.googleusercontent.com',
+    iosBundleId: 'com.hiromi.policode',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBEGL0TUhNpkOS6g3JUGKQOmwp11hIVp6Y',
-    appId: '1:671765559638:ios:77326b54bc4823da94bef7',
-    messagingSenderId: '671765559638',
-    projectId: 'foquita-hiromi',
-    storageBucket: 'foquita-hiromi.firebasestorage.app',
+    apiKey: 'AIzaSyBg-vBUFXoR0bSZzSda4jhSnBJJ9zXslRg',
+    appId: '1:409328556080:ios:44411c77835d8a5f0335f5',
+    messagingSenderId: '409328556080',
+    projectId: 'foquita-hiromi-7ea96',
+    storageBucket: 'foquita-hiromi-7ea96.firebasestorage.app',
+    iosClientId: '409328556080-91f3gr0nsnfindc35dj3abte669sqv74.apps.googleusercontent.com',
     iosBundleId: 'com.example.policode',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyC5brpZW1abtxCeLDK6qhapFXTbw-RQg3w',
-    appId: '1:671765559638:web:0006e941127c7bf294bef7',
-    messagingSenderId: '671765559638',
-    projectId: 'foquita-hiromi',
-    authDomain: 'foquita-hiromi.firebaseapp.com',
-    storageBucket: 'foquita-hiromi.firebasestorage.app',
-    measurementId: 'G-ERM1TNZRD4',
+    apiKey: 'AIzaSyDBchZz25rD7krunkIZgQu92-5_0C5X8GY',
+    appId: '1:409328556080:web:e46eac7aba12ca970335f5',
+    messagingSenderId: '409328556080',
+    projectId: 'foquita-hiromi-7ea96',
+    authDomain: 'foquita-hiromi-7ea96.firebaseapp.com',
+    storageBucket: 'foquita-hiromi-7ea96.firebasestorage.app',
+    measurementId: 'G-C8B6FLRPP4',
   );
+
 }

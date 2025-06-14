@@ -42,6 +42,23 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Manejar argumentos pasados desde otras pantallas
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (arguments != null) {
+      final preguntaInicial = arguments['preguntaInicial'] as String?;
+      if (preguntaInicial != null && preguntaInicial.isNotEmpty) {
+        // Procesar pregunta inicial después de que el chat esté inicializado
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _procesarPreguntaInicial(preguntaInicial);
+        });
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     _textController.dispose();
@@ -199,6 +216,16 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     } catch (e) {
       // Ignorar errores de sugerencias
+    }
+  }
+
+  Future<void> _procesarPreguntaInicial(String pregunta) async {
+    // Esperar un poco para asegurarse de que el chat esté completamente inicializado
+    await Future.delayed(const Duration(milliseconds: 1000));
+    
+    // Solo procesar si no hay mensajes previos (para evitar duplicados)
+    if (_messages.isEmpty || (_messages.length == 1 && !_messages.first['isUser'])) {
+      await _enviarMensaje(pregunta);
     }
   }
 

@@ -353,11 +353,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: CustomButton(
-                  text: 'Editor',
-                  onPressed: () => Navigator.pushNamed(context, '/editor'),
+                  text: 'Notas',
+                  onPressed: () => Navigator.pushNamed(context, '/notas'),
                   type: ButtonType.secondary,
                   customColor: Colors.white,
-                  icon: Icons.edit,
+                  icon: Icons.note,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),

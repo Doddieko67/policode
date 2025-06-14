@@ -4,7 +4,6 @@ import 'package:policode/models/usuario_model.dart';
 import 'flutter_gemini_service.dart'; // Importar el nuevo servicio
 import 'reglamento_service.dart';
 import 'forum_service.dart';
-import 'article_service.dart';
 
 /// Resultado de procesamiento del chatbot
 class ChatbotResult {
@@ -47,7 +46,6 @@ class ChatbotService {
   final FlutterGeminiService _geminiService = FlutterGeminiService();
   final ReglamentoService _reglamentoService = ReglamentoService();
   final ForumService _forumService = ForumService();
-  final ArticleService _articleService = ArticleService();
 
   /// Procesar mensaje del usuario y generar respuesta
   Future<ChatbotResult> procesarMensaje({
@@ -86,8 +84,6 @@ class ChatbotService {
       // Buscar posts relacionados en el foro
       final postsRelacionados = await _forumService.searchPosts(mensajeUsuario);
       
-      // Buscar artículos relacionados
-      final articulosNoticias = await _articleService.searchArticles(mensajeUsuario);
 
       // CAMBIO: Generar respuesta con flutter_gemini
       final geminiResponse = await _geminiService.askAboutReglamento(
@@ -110,23 +106,13 @@ class ChatbotService {
       // Agregar información sobre contenido relacionado si existe
       String respuestaConRelacionados = respuestaFormateada;
       
-      if (postsRelacionados.isNotEmpty || articulosNoticias.isNotEmpty) {
+      if (postsRelacionados.isNotEmpty) {
         respuestaConRelacionados += '\n\n📋 **Contenido relacionado:**\n';
         
-        if (postsRelacionados.isNotEmpty) {
-          respuestaConRelacionados += '\n🗨️ **Posts del foro:**\n';
-          for (int i = 0; i < postsRelacionados.take(3).length; i++) {
-            final post = postsRelacionados[i];
-            respuestaConRelacionados += '• ${post.titulo}\n';
-          }
-        }
-        
-        if (articulosNoticias.isNotEmpty) {
-          respuestaConRelacionados += '\n📰 **Artículos:**\n';
-          for (int i = 0; i < articulosNoticias.take(3).length; i++) {
-            final articulo = articulosNoticias[i];
-            respuestaConRelacionados += '• ${articulo.titulo}\n';
-          }
+        respuestaConRelacionados += '\n🗨️ **Posts del foro:**\n';
+        for (int i = 0; i < postsRelacionados.take(3).length; i++) {
+          final post = postsRelacionados[i];
+          respuestaConRelacionados += '• ${post.titulo}\n';
         }
       }
 
@@ -139,9 +125,6 @@ class ChatbotService {
               .toList(),
           'posts_relacionados': postsRelacionados
               .map((p) => p.id)
-              .toList(),
-          'articulos_noticias': articulosNoticias
-              .map((a) => a.id)
               .toList(),
           'consulta_original': mensajeUsuario,
           'timestamp_procesamiento': DateTime.now().toIso8601String(),

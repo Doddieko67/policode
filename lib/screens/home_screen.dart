@@ -8,6 +8,7 @@ import 'package:policode/widgets/loading_widgets.dart';
 // import '../services/auth_service.dart';
 import '../services/reglamento_service.dart';
 import '../services/notas_service.dart';
+import '../services/forum_service.dart';
 
 /// Pantalla principal de la aplicación
 class HomeScreen extends StatefulWidget {
@@ -21,10 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final ReglamentoService _reglamentoService = ReglamentoService();
   final NotasService _notasService = NotasService();
+  final ForumService _forumService = ForumService();
 
   bool _isLoading = true;
   Map<String, dynamic>? _estadisticas;
   Map<String, int>? _statsNotas;
+  Map<String, int>? _statsForum;
   String? _errorMessage;
 
   // <<< 3. DECLARAR LA VARIABLE DE ESTADO PARA LAS NOTAS RECIENTES
@@ -63,15 +66,19 @@ class _HomeScreenState extends State<HomeScreen> {
         final results = await Future.wait([
           _notasService.getEstadisticas(userId),
           _notasService.getNotasRecientes(userId, limit: 3), // Pide 3 notas
+          _forumService.getForumStats(), // Agregar estadísticas del foro
         ]);
 
         // Asignamos los resultados a nuestras variables de estado
         _statsNotas = results[0] as Map<String, int>;
         _notasRecientes = results[1] as List<Nota>;
+        _statsForum = results[2] as Map<String, int>;
       } else {
         // Si el usuario no está logueado, nos aseguramos de que la lista esté vacía
         _notasRecientes = [];
         _statsNotas = null;
+        // Cargar estadísticas del foro aunque no esté logueado
+        _statsForum = await _forumService.getForumStats();
       }
 
       // Solo actualizamos el estado si el widget todavía está en el árbol.
@@ -169,20 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'admin',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.admin_panel_settings,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('Administración'),
-                  ],
-                ),
-              ),
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
@@ -371,30 +364,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: 'Artículos',
-                  onPressed: () => Navigator.pushNamed(context, '/articles'),
-                  type: ButtonType.secondary,
-                  customColor: Colors.white,
-                  icon: Icons.article,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CustomButton(
-                  text: 'Reglamento',
-                  onPressed: () => Navigator.pushNamed(context, '/reglamentos'),
-                  type: ButtonType.secondary,
-                  customColor: Colors.white,
-                  icon: Icons.gavel,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ],
+          CustomButton(
+            text: 'Reglamento',
+            onPressed: () => Navigator.pushNamed(context, '/reglamentos'),
+            type: ButtonType.secondary,
+            customColor: Colors.white,
+            icon: Icons.gavel,
+            borderRadius: BorderRadius.circular(12),
           ),
         ],
       ),
@@ -402,17 +378,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStatsSection() {
-    // ... (sin cambios)
-    if (_estadisticas == null) return const SizedBox();
+    if (_estadisticas == null || _statsForum == null) return const SizedBox();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Estadísticas del Reglamento',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          'Estadísticas',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Row(
@@ -427,9 +400,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: _buildStatCard(
-                'Categorías',
-                '${(_estadisticas!['categorias'] as Map).length}',
-                Icons.category,
+                'Posts del Foro',
+                '${_statsForum!['totalPosts'] ?? 0}',
+                Icons.forum,
                 Colors.green,
               ),
             ),
@@ -439,17 +412,17 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: _buildStatCard(
-                'Total Palabras',
-                '${_estadisticas!['total_palabras']}',
-                Icons.text_fields,
+                'Respuestas',
+                '${_statsForum!['totalReplies'] ?? 0}',
+                Icons.chat_bubble_outline,
                 Colors.orange,
               ),
             ),
             Expanded(
               child: _buildStatCard(
-                'Promedio/Art.',
-                '${(_estadisticas!['promedio_palabras_por_articulo'] as double).toStringAsFixed(0)}',
-                Icons.analytics,
+                'Total Temas',
+                '${_statsForum!['totalTopics'] ?? 0}',
+                Icons.topic,
                 Colors.purple,
               ),
             ),
@@ -611,9 +584,6 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'settings':
         Navigator.pushNamed(context, '/settings');
-        break;
-      case 'admin':
-        Navigator.pushNamed(context, '/admin');
         break;
       case 'logout':
         _showLogoutDialog();

@@ -24,7 +24,7 @@ class GeminiConfig {
   final List<SafetySetting>? safetySettings;
 
   const GeminiConfig({
-    this.model = 'gemini-1.5-flash',
+    this.model = 'gemini-2.0-flash',
     this.temperature = 0.7,
     this.maxOutputTokens = 2048,
     this.safetySettings,

@@ -1,0 +1,16 @@
+
+puedes eliminar las secciones relacionadas a articulos? Es decir, la lista y la edicion, aparte de 
+borrar la opción de administrador en la foto de perfil. Es que no quiero subir los artículos, ya
+cumpliste la misión de ingresar la lista de los reglamentos completos. Y hay un pequeño problema, 
+el screen navegado desde la lista de reglamentos siempre se carga
+<Another exception was thrown: type 'Articulo' is not a subtype of type 'Map<String, dynamic>?' in type
+cast
+Y aparte, me gustaria que en los postes, el boton de like se rellene cuando se trata de mi, quien pre-
+        _buildStatChip(
+          icon: _hasLiked ? Icons.favorite : Icons.favorite_border,
+          label: '${article.likes}',
+          color: _hasLiked ? Colors.red : theme.colorScheme.onSurfaceVariant,
+          onTap: _toggleLike,
+        ),
+En cuanto a las estadisticas del reglamento, me gusta el diseño del card, pero quiero borrar todo menos
+el de "Total articulos" pues son innecesarias y en su lugar, puedes agregar unas estadisticas de foros.

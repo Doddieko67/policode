@@ -28,7 +28,7 @@ class Articulo extends Equatable {
       numero: json['numero'] as String,
       titulo: json['titulo'] as String,
       contenido: json['contenido'] as String,
-      palabrasClave: List<String>.from(json['palabras_clave'] ?? []),
+      palabrasClave: List<String>.from(json['palabrasClave'] ?? []),
       fechaActualizacion: json['fecha_actualizacion'] != null
           ? DateTime.parse(json['fecha_actualizacion'])
           : null,
@@ -44,7 +44,7 @@ class Articulo extends Equatable {
       'numero': numero,
       'titulo': titulo,
       'contenido': contenido,
-      'palabras_clave': palabrasClave,
+      'palabrasClave': palabrasClave,
       'fecha_actualizacion': fechaActualizacion?.toIso8601String(),
       'categoria': categoria,
       'prioridad': prioridad,

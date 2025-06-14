@@ -242,6 +242,7 @@ class _ForumScreenState extends State<ForumScreen> with TickerProviderStateMixin
               onLike: _authService.isSignedIn
                   ? () => _togglePostLike(post.id)
                   : null,
+              currentUserId: _authService.currentUser?.uid,
             ),
           );
         },
@@ -283,6 +284,7 @@ class _ForumScreenState extends State<ForumScreen> with TickerProviderStateMixin
                     ? () => _togglePostLike(post.id)
                     : null,
                 showPopularityBadge: true,
+                currentUserId: _authService.currentUser?.uid,
               ),
             );
           },

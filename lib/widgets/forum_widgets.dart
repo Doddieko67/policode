@@ -12,6 +12,7 @@ class ForumPostCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLike;
   final bool showPopularityBadge;
+  final String? currentUserId;
 
   const ForumPostCard({
     super.key,
@@ -19,6 +20,7 @@ class ForumPostCard extends StatelessWidget {
     this.onTap,
     this.onLike,
     this.showPopularityBadge = false,
+    this.currentUserId,
   });
 
   @override
@@ -197,6 +199,8 @@ class ForumPostCard extends StatelessWidget {
   }
 
   Widget _buildFooter(ThemeData theme) {
+    final isOwnPost = currentUserId != null && currentUserId == post.autorId;
+    
     return Row(
       children: [
         InkWell(
@@ -207,9 +211,9 @@ class ForumPostCard extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.thumb_up_outlined,
+                  isOwnPost ? Icons.favorite : Icons.favorite_border,
                   size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: isOwnPost ? Colors.red : theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(

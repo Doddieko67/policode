@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Firebase imports
 import 'package:firebase_core/firebase_core.dart';
@@ -7,15 +8,10 @@ import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:policode/screens/articulo_detail_screen.dart';
 import 'package:policode/screens/forum_screen.dart';
 import 'package:policode/screens/create_post_screen.dart';
-import 'package:policode/screens/articles_screen.dart';
-import 'package:policode/screens/article_detail_screen.dart';
-import 'package:policode/screens/admin_screen.dart';
 import 'package:policode/screens/reglamentos_screen.dart';
-import 'package:policode/screens/editor_screen.dart';
 import 'package:policode/screens/chats_list_screen.dart';
 import 'package:policode/screens/private_chat_screen.dart';
 import 'package:policode/services/firebase_config.dart';
-import 'firebase_options.dart'; // ← Configuración automática generada por flutterfire configure
 
 import 'package:policode/core/themes/app_theme.dart';
 import 'package:policode/screens/auth_screen.dart';
@@ -28,11 +24,13 @@ import 'package:policode/widgets/loading_widgets.dart';
 import 'services/auth_service.dart';
 import 'services/reglamento_service.dart';
 
-const String GEMINI_API_KEY = 'AIzaSyDz-WYNCd0y1Zycydm1fW9DbL66StkIx38';
 
 void main() async {
   // Asegurar que Flutter esté inicializado
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Cargar variables de entorno
+  await dotenv.load(fileName: ".env");
 
   // Configurar orientación (solo portrait por ahora)
   await SystemChrome.setPreferredOrientations([
@@ -50,8 +48,14 @@ void main() async {
     ),
   );
 
+  // Inicializar Gemini con API key desde .env
+  final geminiApiKey = dotenv.env['GEMINI_API_KEY'];
+  if (geminiApiKey == null || geminiApiKey.isEmpty) {
+    throw Exception('GEMINI_API_KEY no está configurada en .env');
+  }
+  
   Gemini.init(
-    apiKey: GEMINI_API_KEY,
+    apiKey: geminiApiKey,
     enableDebugging: true, // Solo para desarrollo
   );
 
@@ -121,18 +125,10 @@ class PoliCodeApp extends StatelessWidget {
       '/notas': (context) => const NotasScreen(),
       '/forum': (context) => const ForumScreen(),
       '/create-post': (context) => const CreatePostScreen(),
-      '/profile': (context) => const ProfileScreen(),
-      '/settings': (context) => const SettingsScreen(),
-      '/search': (context) => const SearchScreen(),
       '/articulo': (context) => const ArticuloDetailScreen(),
-      '/articles': (context) => const ArticlesScreen(),
-      '/article-detail': (context) => const ArticleDetailScreen(),
-      '/admin': (context) => const AdminScreen(),
       '/reglamentos': (context) => const ReglamentosScreen(),
-      '/editor': (context) => const EditorScreen(),
       '/chats': (context) => const ChatsListScreen(),
       '/private-chat': (context) => const PrivateChatScreen(),
-      '/historial': (context) => const HistorialScreen(),
     };
   }
 }
@@ -169,11 +165,8 @@ class _AppInitializerState extends State<AppInitializer> {
     try {
       print('🚀 Iniciando app...');
 
-      // 1. Inicializar Firebase con configuración automática
-      print('📱 Inicializando Firebase...');
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      // 1. Firebase ya fue inicializado en main()
+      print('📱 Firebase ya inicializado...');
 
       // 2. Inicializar servicios
       print('🔐 Inicializando servicios...');
@@ -422,57 +415,3 @@ class ErrorScreen extends StatelessWidget {
   }
 }
 
-// Pantallas placeholder que puedes implementar después
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mi Perfil')),
-      body: const Center(child: Text('Pantalla de Perfil\n(Por implementar)')),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Configuración')),
-      body: const Center(
-        child: Text('Pantalla de Configuración\n(Por implementar)'),
-      ),
-    );
-  }
-}
-
-class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Buscar')),
-      body: const Center(
-        child: Text('Pantalla de Búsqueda\n(Por implementar)'),
-      ),
-    );
-  }
-}
-
-class HistorialScreen extends StatelessWidget {
-  const HistorialScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Historial')),
-      body: const Center(
-        child: Text('Pantalla de Historial\n(Por implementar)'),
-      ),
-    );
-  }
-}

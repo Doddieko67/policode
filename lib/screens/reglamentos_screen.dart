@@ -404,11 +404,8 @@ class _ReglamentosScreenState extends State<ReglamentosScreen> {
   void _navigateToArticle(Articulo articulo) {
     Navigator.pushNamed(
       context,
-      '/chat',
-      arguments: {
-        'preguntaInicial': 'Cuéntame sobre el ${articulo.numero}: ${articulo.titulo}',
-        'articuloSeleccionado': articulo,
-      },
+      '/articulo',
+      arguments: {'articuloId': articulo.id},
     );
   }
 

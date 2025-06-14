@@ -1,17 +1,10 @@
 Launching lib/main.dart on 2201116PG in debug mode...
 Running Gradle task 'assembleDebug'...                          
-lib/services/chatbot_service.dart:7:8: Error: Error when reading 'lib/services/article_service.dart': No such file or directory
-import 'article_service.dart';
-       ^
-lib/services/chatbot_service.dart:50:9: Error: Type 'ArticleService' not found.
-  final ArticleService _articleService = ArticleService();
-        ^^^^^^^^^^^^^^
-lib/services/chatbot_service.dart:50:9: Error: 'ArticleService' isn't a type.
-  final ArticleService _articleService = ArticleService();
-        ^^^^^^^^^^^^^^
-lib/services/chatbot_service.dart:50:42: Error: Method not found: 'ArticleService'.
-  final ArticleService _articleService = ArticleService();
-                                         ^^^^^^^^^^^^^^
+lib/services/forum_service.dart:98:64: Error: The method 'toMap' isn't defined for the class 'MediaAttachment'.
+ - 'MediaAttachment' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'toMap'.
+        'mediaAttachments': post.mediaAttachments.map((m) => m.toMap()).toList(),
+                                                               ^^^^^
 Target kernel_snapshot_program failed: Exception
 
 
@@ -27,6 +20,6 @@ Execution failed for task ':app:compileFlutterBuildDebug'.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 3s
-Running Gradle task 'assembleDebug'...                              3.4s
+BUILD FAILED in 2s
+Running Gradle task 'assembleDebug'...                           2,832ms
 Error: Gradle task assembleDebug failed with exit code 1

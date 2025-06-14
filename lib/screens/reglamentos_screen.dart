@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:policode/models/articulo_model.dart';
 import 'package:policode/widgets/loading_widgets.dart';
 import 'package:policode/widgets/custom_button.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ReglamentosScreen extends StatefulWidget {
   const ReglamentosScreen({super.key});
@@ -424,12 +425,17 @@ class _ReglamentosScreenState extends State<ReglamentosScreen> {
   }
 
   void _shareArticle(Articulo articulo) {
-    Clipboard.setData(ClipboardData(
-      text: '${articulo.numero}: ${articulo.titulo}\n\n${articulo.resumen}\n\nConsulta el reglamento completo en PoliCode.',
-    ));
+    final String textoCompartir = '''📋 ${articulo.numero}: ${articulo.titulo}
+
+📄 CONTENIDO:
+${articulo.contenido}
+
+🏛️ Fuente: Reglamento Estudiantil del IPN
+📱 Compartido desde PoliCode''';
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Artículo copiado al portapapeles')),
+    Share.share(
+      textoCompartir,
+      subject: '${articulo.numero}: ${articulo.titulo}',
     );
   }
 
@@ -447,7 +453,10 @@ class _ReglamentosScreenState extends State<ReglamentosScreen> {
     Navigator.pushNamed(
       context,
       '/chat',
-      arguments: 'Explícame el ${articulo.numero}: ${articulo.titulo}',
+      arguments: {
+        'preguntaInicial': 'Cuéntame sobre el ${articulo.numero}: ${articulo.titulo}',
+        'articuloSeleccionado': articulo,
+      },
     );
   }
 }

@@ -1,0 +1,523 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:policode/models/forum_model.dart';
+import 'package:policode/services/auth_service.dart';
+import 'package:policode/services/forum_service.dart';
+import 'package:policode/services/media_service.dart';
+import 'package:policode/widgets/custom_button.dart';
+import 'package:policode/widgets/loading_widgets.dart';
+
+/// Pantalla para editar un post existente
+class EditPostScreen extends StatefulWidget {
+  final ForumPost post;
+
+  const EditPostScreen({
+    super.key,
+    required this.post,
+  });
+
+  @override
+  State<EditPostScreen> createState() => _EditPostScreenState();
+}
+
+class _EditPostScreenState extends State<EditPostScreen> {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
+  final ForumService _forumService = ForumService();
+  final AuthService _authService = AuthService();
+  final MediaService _mediaService = MediaService();
+
+  String? _selectedCategory;
+  List<String> _tags = [];
+  final TextEditingController _tagController = TextEditingController();
+  
+  // Media attachments
+  List<XFile> _selectedImages = [];
+  List<XFile> _selectedVideos = [];
+  List<PlatformFile> _selectedDocuments = [];
+  
+  bool _isSubmitting = false;
+  bool _isUploading = false;
+
+  final List<String> _categories = [
+    'General',
+    'Reglamento',
+    'Académico',
+    'Dudas',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFields();
+  }
+
+  void _initializeFields() {
+    // Inicializar campos con datos del post actual
+    _titleController.text = widget.post.titulo;
+    _contentController.text = widget.post.contenido;
+    _selectedCategory = widget.post.categoria;
+    _tags = List.from(widget.post.tags);
+    
+    // TODO: Si hay medios existentes, cargarlos
+    // Por ahora no cargamos medios existentes para simplicidad
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    _tagController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Editar Post'),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+        actions: [
+          if (_isSubmitting)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: _submitPost,
+              child: Text(
+                'Guardar',
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: _isSubmitting
+          ? const Center(child: LoadingWidget())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTitleField(),
+                  const SizedBox(height: 16),
+                  _buildCategoryField(),
+                  const SizedBox(height: 16),
+                  _buildContentField(),
+                  const SizedBox(height: 16),
+                  _buildTagsField(),
+                  const SizedBox(height: 16),
+                  _buildMediaSection(),
+                  const SizedBox(height: 32),
+                  _buildSubmitButton(),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildTitleField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Título',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(
+            hintText: 'Escribe el título de tu post...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 2,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Categoría',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+          hint: const Text('Selecciona una categoría'),
+          items: _categories.map((category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text(category),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategory = value;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContentField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Contenido',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _contentController,
+          decoration: const InputDecoration(
+            hintText: 'Escribe el contenido de tu post...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 8,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTagsField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Etiquetas',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        if (_tags.isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            children: _tags.map((tag) {
+              return Chip(
+                label: Text(tag),
+                onDeleted: () {
+                  setState(() {
+                    _tags.remove(tag);
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+        ],
+        TextField(
+          controller: _tagController,
+          decoration: InputDecoration(
+            hintText: 'Agregar etiqueta...',
+            border: const OutlineInputBorder(),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: _addTag,
+            ),
+          ),
+          onSubmitted: (_) => _addTag(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMediaSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Archivos adjuntos',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: CustomButton(
+                text: 'Imagen',
+                icon: Icons.image,
+                onPressed: _pickImages,
+                type: ButtonType.secondary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: CustomButton(
+                text: 'Video',
+                icon: Icons.video_library,
+                onPressed: _pickVideos,
+                type: ButtonType.secondary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: CustomButton(
+                text: 'Archivo',
+                icon: Icons.attach_file,
+                onPressed: _pickDocuments,
+                type: ButtonType.secondary,
+              ),
+            ),
+          ],
+        ),
+        
+        // Mostrar archivos seleccionados
+        if (_selectedImages.isNotEmpty ||
+            _selectedVideos.isNotEmpty ||
+            _selectedDocuments.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildSelectedMedia(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSelectedMedia() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_selectedImages.isNotEmpty) ...[
+          const Text('Imágenes:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedImages.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_selectedImages[index].path),
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedImages.removeAt(index);
+                            });
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        
+        if (_selectedDocuments.isNotEmpty) ...[
+          const Text('Documentos:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...(_selectedDocuments.map((doc) {
+            return ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: Text(doc.name),
+              trailing: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _selectedDocuments.remove(doc);
+                  });
+                },
+              ),
+            );
+          }).toList()),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: CustomButton(
+        text: _isSubmitting ? 'Actualizando...' : 'Actualizar Post',
+        onPressed: _isSubmitting ? null : _submitPost,
+        icon: Icons.save,
+      ),
+    );
+  }
+
+  void _addTag() {
+    final tag = _tagController.text.trim();
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  Future<void> _pickImages() async {
+    final picker = ImagePicker();
+    final images = await picker.pickMultiImage();
+    if (images.isNotEmpty) {
+      setState(() {
+        _selectedImages.addAll(images);
+      });
+    }
+  }
+
+  Future<void> _pickVideos() async {
+    final picker = ImagePicker();
+    final video = await picker.pickVideo(source: ImageSource.gallery);
+    if (video != null) {
+      setState(() {
+        _selectedVideos.add(video);
+      });
+    }
+  }
+
+  Future<void> _pickDocuments() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
+    );
+    
+    if (result != null) {
+      setState(() {
+        _selectedDocuments.addAll(result.files);
+      });
+    }
+  }
+
+  Future<void> _submitPost() async {
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El título es requerido')),
+      );
+      return;
+    }
+
+    if (_contentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El contenido es requerido')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Subir medios si hay alguno
+      List<MediaAttachment> newMediaAttachments = [];
+
+      if (_selectedImages.isNotEmpty || _selectedVideos.isNotEmpty || _selectedDocuments.isNotEmpty) {
+        setState(() => _isUploading = true);
+        
+        // Subir imágenes
+        for (final image in _selectedImages) {
+          final attachment = await _mediaService.uploadImage(image, widget.post.id);
+          newMediaAttachments.add(attachment);
+        }
+        
+        // Subir videos
+        for (final video in _selectedVideos) {
+          final attachment = await _mediaService.uploadVideo(video, widget.post.id);
+          newMediaAttachments.add(attachment);
+        }
+        
+        // Subir documentos
+        for (final doc in _selectedDocuments) {
+          final attachment = await _mediaService.uploadDocument(doc, widget.post.id);
+          newMediaAttachments.add(attachment);
+        }
+        
+        setState(() => _isUploading = false);
+      }
+
+      // Crear post actualizado
+      final updatedPost = ForumPost(
+        id: widget.post.id,
+        titulo: _titleController.text.trim(),
+        contenido: _contentController.text.trim(),
+        autorId: widget.post.autorId,
+        autorNombre: widget.post.autorNombre,
+        fechaCreacion: widget.post.fechaCreacion,
+        fechaActualizacion: DateTime.now(),
+        categoria: _selectedCategory ?? 'General',
+        tags: _tags,
+        likes: widget.post.likes,
+        respuestas: widget.post.respuestas,
+        mediaAttachments: newMediaAttachments.isNotEmpty ? 
+            [...widget.post.mediaAttachments, ...newMediaAttachments] : 
+            widget.post.mediaAttachments,
+        isPinned: widget.post.isPinned,
+        isClosed: widget.post.isClosed,
+      );
+
+      // Actualizar el post
+      await _forumService.updateFullPost(updatedPost);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post actualizado exitosamente')),
+        );
+        Navigator.pop(context, updatedPost); // Retornar el post actualizado
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error actualizando post: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _isUploading = false;
+        });
+      }
+    }
+  }
+}

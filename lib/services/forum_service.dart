@@ -87,6 +87,23 @@ class ForumService {
     }
   }
 
+  /// Actualizar un post completo
+  Future<void> updateFullPost(ForumPost post) async {
+    try {
+      final updates = {
+        'titulo': post.titulo,
+        'contenido': post.contenido,
+        'categoria': post.categoria,
+        'tags': post.tags,
+        'mediaAttachments': post.mediaAttachments.map((m) => m.toFirestore()).toList(),
+        'fechaActualizacion': Timestamp.now(),
+      };
+      await _postsCollection.doc(post.id).update(updates);
+    } catch (e) {
+      throw Exception('Error actualizando post: $e');
+    }
+  }
+
   /// Eliminar un post
   Future<void> deletePost(String postId) async {
     try {

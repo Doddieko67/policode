@@ -6,6 +6,7 @@ import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/loading_widgets.dart';
 import 'package:policode/widgets/forum_widgets.dart';
 import 'package:policode/widgets/media_widgets.dart';
+import 'package:policode/screens/edit_post_screen.dart';
 import 'package:intl/intl.dart';
 
 /// Pantalla de detalle de un post del foro
@@ -481,14 +482,27 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
   void _handlePostAction(String action) {
     switch (action) {
       case 'edit':
-        // TODO: Implementar edición de post
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Función de edición próximamente')),
-        );
+        _editPost();
         break;
       case 'delete':
         _showDeleteConfirmation();
         break;
+    }
+  }
+
+  Future<void> _editPost() async {
+    final result = await Navigator.push<ForumPost>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPostScreen(post: _currentPost),
+      ),
+    );
+
+    // Si se actualizó el post, actualizar la UI
+    if (result != null) {
+      setState(() {
+        _currentPost = result;
+      });
     }
   }
 

@@ -10,6 +10,9 @@ import 'package:policode/screens/forum_screen.dart';
 import 'package:policode/screens/create_post_screen.dart';
 import 'package:policode/screens/reglamentos_screen.dart';
 import 'package:policode/screens/mis_posts_screen.dart';
+import 'package:policode/screens/admin/admin_dashboard_screen.dart';
+import 'package:policode/screens/admin/reports_management_screen.dart';
+import 'package:policode/screens/admin/regulations_management_screen.dart';
 import 'package:policode/services/firebase_config.dart';
 
 import 'package:policode/core/themes/app_theme.dart';
@@ -127,6 +130,10 @@ class PoliCodeApp extends StatelessWidget {
       '/articulo': (context) => const ArticuloDetailScreen(),
       '/reglamentos': (context) => const ReglamentosScreen(),
       '/mis-posts': (context) => const MisPostsScreen(),
+      // Admin routes
+      '/admin': (context) => const AdminDashboardScreen(),
+      '/admin/reports': (context) => const ReportsManagementScreen(),
+      '/admin/regulations': (context) => const RegulationsManagementScreen(),
     };
   }
 }

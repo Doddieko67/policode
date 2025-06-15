@@ -179,6 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
           'isUser': false,
           'timestamp': DateTime.now(),
           'articulosRelacionados': resultado.articulosRelacionados,
+          'postsRelacionados': resultado.postsRelacionados,
           'metadatos': resultado.mensaje!.metadatos,
         };
 
@@ -432,6 +433,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       timestamp: message['timestamp'] ?? DateTime.now(),
                       hasError: message['hasError'] ?? false,
                       articulosRelacionados: message['articulosRelacionados'],
+                      postsRelacionados: message['postsRelacionados'],
                       onArticuloTap: _onArticuloTap,
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,

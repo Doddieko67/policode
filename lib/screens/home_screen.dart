@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:policode/models/nota_model.dart'; // <<< 1. IMPORTAR MODELO
 import 'package:policode/services/auth_service.dart';
+import 'package:policode/services/admin_service.dart';
 import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/custom_cards.dart';
 // import 'package:policode/widgets/custom_cards.dart'; // Ya no se necesita si NotaCard está separada
@@ -20,11 +21,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
+  final AdminService _adminService = AdminService();
   final ReglamentoService _reglamentoService = ReglamentoService();
   final NotasService _notasService = NotasService();
   final ForumService _forumService = ForumService();
 
   bool _isLoading = true;
+  bool _isAdmin = false;
   Map<String, dynamic>? _estadisticas;
   Map<String, int>? _statsNotas;
   Map<String, int>? _statsForum;
@@ -61,6 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
       // <<< 4. MODIFICAR LA LÓGICA PARA CARGAR NOTAS RECIENTES
       if (_authService.isSignedIn) {
         final userId = _authService.currentUser!.uid;
+
+        // Verificar si es admin
+        _isAdmin = await _adminService.isCurrentUserAdmin();
 
         // Usamos Future.wait para ejecutar ambas llamadas en paralelo y ser más eficientes
         final results = await Future.wait([
@@ -364,13 +370,32 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          CustomButton(
-            text: 'Reglamento',
-            onPressed: () => Navigator.pushNamed(context, '/reglamentos'),
-            type: ButtonType.secondary,
-            customColor: Colors.white,
-            icon: Icons.gavel,
-            borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  text: 'Normativa',
+                  onPressed: () => Navigator.pushNamed(context, '/reglamentos'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.gavel,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              if (_isAdmin) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: CustomButton(
+                    text: 'Admin',
+                    onPressed: () => Navigator.pushNamed(context, '/admin'),
+                    type: ButtonType.secondary,
+                    customColor: Colors.orange[50],
+                    icon: Icons.admin_panel_settings,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

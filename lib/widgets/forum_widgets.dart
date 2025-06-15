@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:policode/models/forum_model.dart';
+import 'package:policode/models/report_model.dart';
 import 'package:policode/services/auth_service.dart';
 import 'package:policode/services/forum_service.dart';
+import 'package:policode/services/admin_service.dart';
 import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/media_widgets.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +32,7 @@ class ForumPostCard extends StatefulWidget {
 class _ForumPostCardState extends State<ForumPostCard> {
   final ForumService _forumService = ForumService();
   final AuthService _authService = AuthService();
+  final AdminService _adminService = AdminService();
   bool? _hasUserLiked;
 
   @override
@@ -88,6 +91,129 @@ class _ForumPostCardState extends State<ForumPostCard> {
     );
   }
 
+  void _showReportDialog(BuildContext context) {
+    final reasonController = TextEditingController();
+    ReportType selectedType = ReportType.inappropriate;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reportar post'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Tipo de reporte:'),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<ReportType>(
+                value: selectedType,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: ReportType.values.map((type) {
+                  String label;
+                  switch (type) {
+                    case ReportType.spam:
+                      label = 'Spam';
+                      break;
+                    case ReportType.inappropriate:
+                      label = 'Contenido inapropiado';
+                      break;
+                    case ReportType.harassment:
+                      label = 'Acoso';
+                      break;
+                    case ReportType.misinformation:
+                      label = 'Información falsa';
+                      break;
+                    case ReportType.other:
+                      label = 'Otro';
+                      break;
+                  }
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text(label),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    selectedType = value;
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text('Razón del reporte:'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: 'Describe la razón del reporte...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (reasonController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Por favor ingresa una razón'),
+                  ),
+                );
+                return;
+              }
+
+              try {
+                final report = ReportModel(
+                  id: '',
+                  reporterId: _authService.currentUser!.uid,
+                  reporterName: _authService.currentUser!.nombre ?? 'Usuario',
+                  reportedUserId: widget.post.autorId,
+                  reportedUserName: widget.post.autorNombre,
+                  contentType: ReportedContentType.post,
+                  contentId: widget.post.id,
+                  contentPreview: widget.post.titulo,
+                  type: selectedType,
+                  reason: reasonController.text.trim(),
+                  createdAt: DateTime.now(),
+                );
+
+                await _adminService.createReport(report);
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Reporte enviado exitosamente'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Error al enviar el reporte'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Enviar reporte'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(ThemeData theme) {
     return Row(
       children: [
@@ -126,6 +252,27 @@ class _ForumPostCardState extends State<ForumPostCard> {
           ),
         ),
         _buildBadges(theme),
+        if (_authService.isSignedIn && widget.currentUserId != widget.post.autorId)
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'report') {
+                _showReportDialog(context);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.flag, size: 16, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text('Reportar', style: TextStyle(color: Colors.orange)),
+                  ],
+                ),
+              ),
+            ],
+            icon: const Icon(Icons.more_vert, size: 16),
+          ),
       ],
     );
   }
@@ -318,6 +465,7 @@ class ForumReplyCard extends StatefulWidget {
 
 class _ForumReplyCardState extends State<ForumReplyCard> {
   final AuthService _authService = AuthService();
+  final AdminService _adminService = AdminService();
 
   @override
   Widget build(BuildContext context) {
@@ -373,30 +521,32 @@ class _ForumReplyCardState extends State<ForumReplyCard> {
                 ),
               ),
               const Spacer(),
-              if (_authService.isSignedIn && 
-                  _authService.currentUser!.uid == widget.reply.autorId)
+              if (_authService.isSignedIn)
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'edit' && widget.onEdit != null) {
                       widget.onEdit!();
                     } else if (value == 'delete' && widget.onDelete != null) {
                       widget.onDelete!();
+                    } else if (value == 'report') {
+                      _showReportDialog(context);
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 16),
-                          SizedBox(width: 8),
-                          Text('Editar'),
-                        ],
+                    if (_authService.currentUser!.uid == widget.reply.autorId) ...[
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 16),
+                            SizedBox(width: 8),
+                            Text('Editar'),
+                          ],
+                        ),
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
                         children: [
                           Icon(Icons.delete, size: 16, color: Colors.red),
                           SizedBox(width: 8),
@@ -404,6 +554,18 @@ class _ForumReplyCardState extends State<ForumReplyCard> {
                         ],
                       ),
                     ),
+                    ],
+                    if (_authService.currentUser!.uid != widget.reply.autorId)
+                      const PopupMenuItem(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag, size: 16, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('Reportar', style: TextStyle(color: Colors.orange)),
+                          ],
+                        ),
+                      ),
                   ],
                   icon: const Icon(Icons.more_vert, size: 16),
                 ),
@@ -448,6 +610,131 @@ class _ForumReplyCardState extends State<ForumReplyCard> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    final reasonController = TextEditingController();
+    ReportType selectedType = ReportType.inappropriate;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reportar contenido'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Tipo de reporte:'),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<ReportType>(
+                value: selectedType,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: ReportType.values.map((type) {
+                  String label;
+                  switch (type) {
+                    case ReportType.spam:
+                      label = 'Spam';
+                      break;
+                    case ReportType.inappropriate:
+                      label = 'Contenido inapropiado';
+                      break;
+                    case ReportType.harassment:
+                      label = 'Acoso';
+                      break;
+                    case ReportType.misinformation:
+                      label = 'Información falsa';
+                      break;
+                    case ReportType.other:
+                      label = 'Otro';
+                      break;
+                  }
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text(label),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    selectedType = value;
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text('Razón del reporte:'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: 'Describe la razón del reporte...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (reasonController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Por favor ingresa una razón'),
+                  ),
+                );
+                return;
+              }
+
+              try {
+                final report = ReportModel(
+                  id: '',
+                  reporterId: _authService.currentUser!.uid,
+                  reporterName: _authService.currentUser!.nombre ?? 'Usuario',
+                  reportedUserId: widget.reply.autorId,
+                  reportedUserName: widget.reply.autorNombre,
+                  contentType: ReportedContentType.reply,
+                  contentId: widget.reply.id,
+                  contentPreview: widget.reply.contenido.length > 100
+                      ? widget.reply.contenido.substring(0, 100) + '...'
+                      : widget.reply.contenido,
+                  type: selectedType,
+                  reason: reasonController.text.trim(),
+                  createdAt: DateTime.now(),
+                );
+
+                await _adminService.createReport(report);
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Reporte enviado exitosamente'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Error al enviar el reporte'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Enviar reporte'),
           ),
         ],
       ),

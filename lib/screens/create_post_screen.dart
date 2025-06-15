@@ -58,8 +58,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crear Post'),
-        elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
+        centerTitle: true,
+        elevation: 2,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         actions: [
           if (_isSubmitting)
             const Padding(
@@ -73,7 +75,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           else
             TextButton(
               onPressed: _canSubmit() ? _submitPost : null,
-              child: const Text('Publicar'),
+              child: Text(
+                'Publicar',
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),

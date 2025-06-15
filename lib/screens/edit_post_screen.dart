@@ -84,6 +84,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Editar Post'),
+        centerTitle: true,
+        elevation: 2,
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         actions: [
@@ -253,37 +255,36 @@ class _EditPostScreenState extends State<EditPostScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Archivos adjuntos',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        Text(
+          'Multimedia',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: CustomButton(
-                text: 'Imagen',
+              child: _buildMediaButton(
                 icon: Icons.image,
-                onPressed: _pickImages,
-                type: ButtonType.secondary,
+                label: 'Imágenes',
+                onPressed: _isUploading ? null : _pickImages,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: CustomButton(
-                text: 'Video',
-                icon: Icons.video_library,
-                onPressed: _pickVideos,
-                type: ButtonType.secondary,
+              child: _buildMediaButton(
+                icon: Icons.videocam,
+                label: 'Video',
+                onPressed: _isUploading ? null : _pickVideos,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: CustomButton(
-                text: 'Archivo',
+              child: _buildMediaButton(
                 icon: Icons.attach_file,
-                onPressed: _pickDocuments,
-                type: ButtonType.secondary,
+                label: 'Archivo',
+                onPressed: _isUploading ? null : _pickDocuments,
               ),
             ),
           ],
@@ -298,6 +299,24 @@ class _EditPostScreenState extends State<EditPostScreen> {
           _buildMediaPreview(),
         ],
       ],
+    );
+  }
+
+  Widget _buildMediaButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
     );
   }
 

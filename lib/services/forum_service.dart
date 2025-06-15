@@ -511,4 +511,126 @@ class ForumService {
       throw Exception('Error obteniendo respuestas del usuario: $e');
     }
   }
+
+  // ===== MÉTODOS PARA IA =====
+
+  /// Buscar posts relevantes para una consulta usando búsqueda por texto
+  Future<List<ForumPost>> searchPostsForAI(String query, {int limit = 5}) async {
+    try {
+      final queryLower = query.toLowerCase();
+      
+      // Obtener posts recientes para buscar manualmente
+      final querySnapshot = await _postsCollection
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('fechaCreacion', descending: true)
+          .limit(50) // Buscar en los últimos 50 posts
+          .get();
+
+      final List<ForumPost> relevantPosts = [];
+      
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        
+        final post = ForumPost.fromFirestore(data);
+        
+        // Buscar coincidencias en título, contenido, tags o categoría
+        final titleLower = post.titulo.toLowerCase();
+        final contentLower = post.contenido.toLowerCase();
+        final tagsLower = post.tags.join(' ').toLowerCase();
+        final categoryLower = (post.categoria ?? '').toLowerCase();
+        
+        // Calcular relevancia (simple scoring)
+        int score = 0;
+        if (titleLower.contains(queryLower)) score += 10;
+        if (contentLower.contains(queryLower)) score += 5;
+        if (tagsLower.contains(queryLower)) score += 8;
+        if (categoryLower.contains(queryLower)) score += 6;
+        
+        // Buscar palabras individuales
+        final queryWords = queryLower.split(' ').where((w) => w.length > 2);
+        for (final word in queryWords) {
+          if (titleLower.contains(word)) score += 3;
+          if (contentLower.contains(word)) score += 1;
+          if (tagsLower.contains(word)) score += 2;
+        }
+        
+        if (score > 0) {
+          relevantPosts.add(post);
+        }
+      }
+      
+      // Ordenar por likes y respuestas (popularidad) y tomar los primeros
+      relevantPosts.sort((a, b) {
+        final scoreA = a.likes + a.respuestas;
+        final scoreB = b.likes + b.respuestas;
+        return scoreB.compareTo(scoreA);
+      });
+      
+      return relevantPosts.take(limit).toList();
+    } catch (e) {
+      print('Error buscando posts para IA: $e');
+      return [];
+    }
+  }
+
+  /// Generar contexto de posts para la IA
+  Future<String> generarContextoPostsParaIA(String query) async {
+    try {
+      final postsRelevantes = await searchPostsForAI(query);
+      
+      if (postsRelevantes.isEmpty) {
+        return 'No se encontraron posts relevantes en el foro para esta consulta.';
+      }
+      
+      final buffer = StringBuffer();
+      buffer.writeln('CONTEXTO DEL FORO:');
+      buffer.writeln('Posts relevantes encontrados en el foro de la comunidad:');
+      buffer.writeln();
+      
+      for (int i = 0; i < postsRelevantes.length; i++) {
+        final post = postsRelevantes[i];
+        buffer.writeln('POST ${i + 1}:');
+        buffer.writeln('Título: ${post.titulo}');
+        buffer.writeln('Autor: ${post.autorNombre}');
+        buffer.writeln('Categoría: ${post.categoria ?? "General"}');
+        if (post.tags.isNotEmpty) {
+          buffer.writeln('Tags: ${post.tags.join(", ")}');
+        }
+        buffer.writeln('Likes: ${post.likes} | Respuestas: ${post.respuestas}');
+        
+        // Truncar contenido para no sobrecargar el prompt
+        final contenidoTruncado = post.contenido.length > 200 
+            ? '${post.contenido.substring(0, 200)}...'
+            : post.contenido;
+        buffer.writeln('Contenido: $contenidoTruncado');
+        buffer.writeln('---');
+      }
+      
+      return buffer.toString();
+    } catch (e) {
+      print('Error generando contexto de posts: $e');
+      return 'Error al obtener información del foro.';
+    }
+  }
+
+  /// Obtener posts más populares para contexto general
+  Future<List<ForumPost>> getPopularPostsForContext({int limit = 10}) async {
+    try {
+      final querySnapshot = await _postsCollection
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('likes', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return ForumPost.fromFirestore(data);
+      }).toList();
+    } catch (e) {
+      print('Error obteniendo posts populares: $e');
+      return [];
+    }
+  }
 }

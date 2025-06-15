@@ -1,6 +1,7 @@
 // ese es chatbot_components.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:policode/widgets/related_posts_widget.dart';
 
 /// Burbuja de mensaje del chat
 class ChatBubble extends StatelessWidget {
@@ -10,9 +11,11 @@ class ChatBubble extends StatelessWidget {
   final bool isLoading;
   final bool hasError;
   final List<String>? articulosRelacionados;
+  final List<String>? postsRelacionados;
   final List<String>? sugerencias;
   final VoidCallback? onRetry;
   final Function(String)? onArticuloTap;
+  final Function(String)? onPostTap;
   final Function(String)? onSugerenciaTap;
   final EdgeInsetsGeometry? margin;
 
@@ -24,9 +27,11 @@ class ChatBubble extends StatelessWidget {
     this.isLoading = false,
     this.hasError = false,
     this.articulosRelacionados,
+    this.postsRelacionados,
     this.sugerencias,
     this.onRetry,
     this.onArticuloTap,
+    this.onPostTap,
     this.onSugerenciaTap,
     this.margin,
   });
@@ -54,6 +59,9 @@ class ChatBubble extends StatelessWidget {
                 if (articulosRelacionados != null &&
                     articulosRelacionados!.isNotEmpty)
                   _buildArticulosRelacionados(theme),
+                if (postsRelacionados != null &&
+                    postsRelacionados!.isNotEmpty)
+                  RelatedPostsWidget(postIds: postsRelacionados!),
                 if (sugerencias != null && sugerencias!.isNotEmpty)
                   _buildSugerencias(theme),
                 const SizedBox(height: 4),
@@ -299,6 +307,7 @@ class ChatBubble extends StatelessWidget {
       ),
     );
   }
+
 
   Widget _buildSugerencias(ThemeData theme) {
     return Container(

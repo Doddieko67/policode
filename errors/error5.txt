@@ -1,35 +1,51 @@
-❯ flutter run
-Launching lib/main.dart on SM A055M in debug mode...
-lib/screens/editor_screen.dart:189:13: Error: The method 'CustomTextFormField' isn't defined for the class '_EditorScreenState'.
- - '_EditorScreenState' is from 'package:policode/screens/editor_screen.dart' ('lib/screens/editor_screen.dart').
-Try correcting the name to the name of an existing method, or defining a method named 'CustomTextFormField'.
-            CustomTextFormField(
-            ^^^^^^^^^^^^^^^^^^^
-lib/screens/editor_screen.dart:207:13: Error: The method 'CustomTextFormField' isn't defined for the class '_EditorScreenState'.
- - '_EditorScreenState' is from 'package:policode/screens/editor_screen.dart' ('lib/screens/editor_screen.dart').
-Try correcting the name to the name of an existing method, or defining a method named 'CustomTextFormField'.
-            CustomTextFormField(
-            ^^^^^^^^^^^^^^^^^^^
-lib/screens/editor_screen.dart:225:13: Error: The method 'CustomTextFormField' isn't defined for the class '_EditorScreenState'.
- - '_EditorScreenState' is from 'package:policode/screens/editor_screen.dart' ('lib/screens/editor_screen.dart').
-Try correcting the name to the name of an existing method, or defining a method named 'CustomTextFormField'.
-            CustomTextFormField(
-            ^^^^^^^^^^^^^^^^^^^
-Target kernel_snapshot_program failed: Exception
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Another exception was thrown: A RenderFlex overflowed by 31 pixels on the bottom.
+Another exception was thrown: A RenderFlex overflowed by 50 pixels on the bottom.
+Another exception was thrown: A RenderFlex overflowed by 50 pixels on the bottom.
+Performing hot reload...                                                
+Reloaded 1 of 1799 libraries in 885ms (compile: 16 ms, reload: 378 ms, reassemble: 393 ms).
 
 
-FAILURE: Build failed with an exception.
+══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during layout:
+A RenderFlex overflowed by 50 pixels on the bottom.
 
-* What went wrong:
-Execution failed for task ':app:compileFlutterBuildDebug'.
-> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+The relevant error-causing widget was:
+  Column
+  Column:file:///home/mauchly/codes/flutter/policode/lib/screens/admin/admin_dashboard_screen.dart:148
+  :16
 
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
+To inspect this widget in Flutter DevTools, visit:
+http://127.0.0.1:9100/#/inspector?uri=http%3A%2F%2F127.0.0.1%3A41413%2FPPwneGifJ6g%3D%2F&inspectorRef=
+inspector-348
 
-BUILD FAILED in 2s
-Running Gradle task 'assembleDebug'...                           2,843ms
-Error: Gradle task assembleDebug failed with exit code 1
+The overflowing RenderFlex has an orientation of Axis.vertical.
+The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and
+black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
+Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the
+RenderFlex to fit within the available space instead of being sized to their natural size.
+This is considered an error condition because it indicates that there is content that cannot be
+seen. If the content is legitimately bigger than the available space, consider clipping it with a
+ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,
+like a ListView.
+The specific RenderFlex in question is: RenderFlex#9e725 OVERFLOWING:
+  creator: Column ← Padding ← Semantics ← DefaultTextStyle ← AnimatedDefaultTextStyle ←
+    _InkFeatures-[GlobalKey#3ea04 ink renderer] ← NotificationListener<LayoutChangedNotification> ←
+    CustomPaint ← _ShapeBorderPaint ← PhysicalShape ← _MaterialInterior ← Material ← ⋯
+  parentData: offset=Offset(16.0, 16.0) (can use size)
+  constraints: BoxConstraints(w=132.4, h=74.9)
+  size: Size(132.4, 74.9)
+  direction: vertical
+  mainAxisAlignment: center
+  mainAxisSize: max
+  crossAxisAlignment: center
+  verticalDirection: down
+  spacing: 0.0
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Another exception was thrown: A RenderFlex overflowed by 50 pixels on the bottom.
+Another exception was thrown: A RenderFlex overflowed by 31 pixels on the bottom.
+Another exception was thrown: A RenderFlex overflowed by 31 pixels on the bottom.

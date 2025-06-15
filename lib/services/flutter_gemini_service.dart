@@ -105,6 +105,40 @@ class FlutterGeminiService {
     }
   }
 
+  /// Generar respuesta combinando reglamento y foro
+  Future<GeminiResponse> askAboutReglamentoAndForum({
+    required String userQuestion,
+    required String reglamentoContext,
+    String? forumContext,
+    String? userName,
+  }) async {
+    try {
+      if (!isConfigured) {
+        return GeminiResponse.error('Gemini no está configurado correctamente');
+      }
+
+      final prompt = _buildCombinedPrompt(
+        userQuestion: userQuestion,
+        reglamentoContext: reglamentoContext,
+        forumContext: forumContext,
+        userName: userName,
+      );
+
+      // Usar método text() que es más simple y estable
+      final response = await _gemini.text(prompt);
+
+      // Manejo seguro de la respuesta
+      final output = response?.output;
+      if (output != null && output.isNotEmpty) {
+        return GeminiResponse.success(output);
+      } else {
+        return GeminiResponse.error('No se recibió respuesta válida de Gemini');
+      }
+    } catch (e) {
+      return GeminiResponse.error('Error al comunicarse con Gemini: $e');
+    }
+  }
+
   /// Construir prompt especializado para consultas del reglamento
   String _buildReglamentoPrompt({
     required String userQuestion,
@@ -131,6 +165,44 @@ $userQuestion
 
 RESPUESTA:
 $userGreeting te ayudo con tu consulta sobre el reglamento de PoliCode.
+
+''';
+  }
+
+  /// Construir prompt combinado para reglamento y foro
+  String _buildCombinedPrompt({
+    required String userQuestion,
+    required String reglamentoContext,
+    String? forumContext,
+    String? userName,
+  }) {
+    final userGreeting = userName != null ? 'Hola $userName, ' : 'Hola, ';
+
+    return '''
+Eres un asistente especializado en PoliCode que ayuda a los usuarios con consultas sobre el reglamento y también puede referir a discusiones relevantes del foro de la comunidad.
+
+INSTRUCCIONES:
+1. Prioriza siempre la información oficial del reglamento
+2. Usa los posts del foro como información complementaria o para mostrar discusiones relacionadas
+3. Mantén un tono profesional pero amigable
+4. Estructura tu respuesta claramente
+5. Si mencionas posts del foro, indica que son discusiones de la comunidad
+6. Si es relevante, menciona números de artículos específicos del reglamento
+
+CONTEXTO DEL REGLAMENTO OFICIAL:
+$reglamentoContext
+
+${forumContext != null && forumContext.isNotEmpty ? '''
+$forumContext
+
+IMPORTANTE: Los posts del foro son discusiones de la comunidad y no reemplazan la información oficial del reglamento.
+''' : ''}
+
+PREGUNTA DEL USUARIO:
+$userQuestion
+
+RESPUESTA:
+$userGreeting te ayudo con tu consulta sobre PoliCode.
 
 ''';
   }

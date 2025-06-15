@@ -389,6 +389,20 @@ class AuthService {
           .collection('usuarios')
           .doc(usuario.uid)
           .set(usuario.toJson(), SetOptions(merge: true));
+      
+      // También crear/actualizar en la colección 'users' para el sistema de admin
+      await _firestore
+          .collection('users')
+          .doc(usuario.uid)
+          .set({
+            'email': usuario.email,
+            'displayName': usuario.nombre,
+            'photoURL': null, // Usuario no tiene campo de foto
+            'role': 'user', // Por defecto todos son usuarios normales
+            'status': 'active',
+            'createdAt': FieldValue.serverTimestamp(),
+            'reportCount': 0,
+          }, SetOptions(merge: true));
     } catch (e) {
       print('Error guardando usuario en Firestore: $e');
       rethrow;

@@ -82,13 +82,16 @@ class ChatbotService {
       );
 
       // Buscar posts relacionados en el foro
-      final postsRelacionados = await _forumService.searchPosts(mensajeUsuario);
+      final postsRelacionados = await _forumService.searchPostsForAI(mensajeUsuario);
       
+      // Generar contexto del foro si hay posts relevantes
+      final contextoForo = await _forumService.generarContextoPostsParaIA(mensajeUsuario);
 
-      // CAMBIO: Generar respuesta con flutter_gemini
-      final geminiResponse = await _geminiService.askAboutReglamento(
+      // CAMBIO: Usar el nuevo método combinado
+      final geminiResponse = await _geminiService.askAboutReglamentoAndForum(
         userQuestion: mensajeUsuario,
         reglamentoContext: contextoReglamento,
+        forumContext: contextoForo,
         userName: usuario?.nombre,
       );
 

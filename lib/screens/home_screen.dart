@@ -342,11 +342,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: CustomButton(
-                  text: 'Chats',
-                  onPressed: () => Navigator.pushNamed(context, '/chats'),
+                  text: 'Mis posts',
+                  onPressed: () => Navigator.pushNamed(context, '/mis-posts'),
                   type: ButtonType.secondary,
                   customColor: Colors.white,
-                  icon: Icons.chat,
+                  icon: Icons.person_outline,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),

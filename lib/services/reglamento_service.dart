@@ -1,6 +1,6 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:policode/models/articulo_model.dart';
+import 'package:policode/utils/migrate_regulations.dart';
 
 /// Resultado de operaciones del reglamento
 class ReglamentoResult {
@@ -21,12 +21,15 @@ class ReglamentoResult {
       ReglamentoResult(success: false, error: error);
 }
 
-/// Servicio para manejar el reglamento
+/// Servicio para manejar el reglamento desde Firebase
 class ReglamentoService {
   static final ReglamentoService _instance = ReglamentoService._internal();
   factory ReglamentoService() => _instance;
   ReglamentoService._internal();
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final RegulationMigrator _migrator = RegulationMigrator();
+  
   List<Articulo>? _articulos;
   bool _isLoaded = false;
   String? _lastError;
@@ -34,7 +37,7 @@ class ReglamentoService {
   /// Verificar si el reglamento está cargado
   bool get isLoaded => _isLoaded;
 
-  /// Obtener todos los artículos (carga si es necesario)
+  /// Obtener todos los artículos (carga desde Firebase si es necesario)
   Future<List<Articulo>> get articulos async {
     if (!_isLoaded) {
       await _cargarReglamento();
@@ -45,213 +48,310 @@ class ReglamentoService {
   /// Obtener error de la última operación
   String? get lastError => _lastError;
 
-  /// Cargar reglamento desde assets
+  /// Cargar reglamento desde Firebase
   Future<ReglamentoResult> cargarReglamento() async {
     try {
+      print('📚 Cargando reglamentos desde Firebase...');
+      
+      // Verificar si necesitamos migrar primero
+      if (!await _migrator.areRegulationsMigrated()) {
+        print('🔄 Primera vez - migrando reglamentos desde assets...');
+        await _migrator.migrateRegulationsToFirebase();
+      }
+      
       await _cargarReglamento();
-      return ReglamentoResult.success(_articulos ?? []);
+      
+      if (_articulos != null) {
+        return ReglamentoResult.success(_articulos!);
+      } else {
+        return ReglamentoResult.error(_lastError ?? 'Error desconocido');
+      }
     } catch (e) {
-      return ReglamentoResult.error(e.toString());
+      final error = 'Error cargando reglamento: $e';
+      _lastError = error;
+      print('❌ $error');
+      return ReglamentoResult.error(error);
     }
   }
 
-  /// Buscar artículos por consulta
-  Future<List<Articulo>> buscarArticulos(
-    String consulta, {
-    double umbralMinimo = 0.5,
-  }) async {
-    final articulos = await this.articulos;
-    if (consulta.trim().isEmpty) return [];
-
-    return articulos.buscarPorConsulta(consulta, umbralMinimo: umbralMinimo);
-  }
-
-  /// Obtener artículo por ID
-  Future<Articulo?> obtenerArticuloPorId(String id) async {
-    final articulos = await this.articulos;
-    try {
-      return articulos.firstWhere((a) => a.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Obtener artículos por categoría
-  Future<List<Articulo>> obtenerArticulosPorCategoria(String categoria) async {
-    final articulos = await this.articulos;
-    return articulos.filtrarPorCategoria(categoria);
-  }
-
-  /// Obtener todas las categorías disponibles
-  Future<List<String>> obtenerCategorias() async {
-    final articulos = await this.articulos;
-    return articulos.categorias;
-  }
-
-  /// Obtener artículos relacionados (por palabras clave similares)
-  Future<List<Articulo>> obtenerArticulosRelacionados(
-    String articuloId, {
-    int limite = 5,
-  }) async {
-    final articulos = await this.articulos;
-    final articulo = await obtenerArticuloPorId(articuloId);
-
-    if (articulo == null) return [];
-
-    // Buscar artículos que compartan palabras clave
-    final relacionados = <MapEntry<Articulo, int>>[];
-
-    for (final art in articulos) {
-      if (art.id == articuloId) continue;
-
-      int coincidencias = 0;
-      for (final palabra in articulo.palabrasClave) {
-        if (art.palabrasClave.contains(palabra) ||
-            art.categoria == articulo.categoria) {
-          coincidencias++;
-        }
-      }
-
-      if (coincidencias > 0) {
-        relacionados.add(MapEntry(art, coincidencias));
-      }
-    }
-
-    // Ordenar por número de coincidencias y tomar los primeros
-    relacionados.sort((a, b) => b.value.compareTo(a.value));
-    return relacionados.take(limite).map((e) => e.key).toList();
-  }
-
-  /// Buscar sugerencias de consulta basadas en palabras clave
-  Future<List<String>> obtenerSugerencias(
-    String consulta, {
-    int limite = 5,
-  }) async {
-    final articulos = await this.articulos;
-    if (consulta.trim().isEmpty) return [];
-
-    final consultaLimpia = consulta.toLowerCase().trim();
-    final sugerencias = <String>{};
-
-    for (final articulo in articulos) {
-      // Agregar palabras clave que contengan parte de la consulta
-      for (final palabra in articulo.palabrasClave) {
-        if (palabra.toLowerCase().contains(consultaLimpia) ||
-            consultaLimpia.contains(palabra.toLowerCase())) {
-          sugerencias.add(palabra);
-        }
-      }
-
-      // Agregar categorías que coincidan
-      if (articulo.categoria != null &&
-          articulo.categoria!.toLowerCase().contains(consultaLimpia)) {
-        sugerencias.add(articulo.categoria!);
-      }
-    }
-
-    return sugerencias.take(limite).toList();
-  }
-
-  /// Generar contexto para Gemini con artículos relevantes
-  Future<String> generarContextoParaGemini(
-    String consulta, {
-    int maxArticulos = 5,
-  }) async {
-    final articulosRelevantes = await buscarArticulos(
-      consulta,
-      umbralMinimo: 0.3,
-    );
-
-    if (articulosRelevantes.isEmpty) {
-      return 'No se encontraron artículos específicamente relacionados con "$consulta".';
-    }
-
-    final context = StringBuffer();
-    context.writeln('REGLAMENTO POLICODE - ARTÍCULOS RELEVANTES:\n');
-
-    final articulosParaContexto = articulosRelevantes.take(maxArticulos);
-
-    for (final articulo in articulosParaContexto) {
-      context.writeln('${articulo.numero}: ${articulo.titulo}');
-      context.writeln('Contenido: ${articulo.contenido}');
-
-      if (articulo.categoria != null) {
-        context.writeln('Categoría: ${articulo.categoria}');
-      }
-
-      if (articulo.palabrasClave.isNotEmpty) {
-        context.writeln('Palabras clave: ${articulo.palabrasClave.join(', ')}');
-      }
-
-      context.writeln('---\n');
-    }
-
-    return context.toString();
-  }
-
-  /// Recargar reglamento (útil para actualizaciones)
-  Future<ReglamentoResult> recargarReglamento() async {
-    _isLoaded = false;
-    _articulos = null;
-    _lastError = null;
-    return await cargarReglamento();
-  }
-
-  // Métodos privados
-
-  /// Cargar reglamento desde assets
+  /// Cargar reglamento interno desde Firebase
   Future<void> _cargarReglamento() async {
     try {
       _lastError = null;
+      
+      final querySnapshot = await _firestore
+          .collection('regulations')
+          .where('isActive', isEqualTo: true)
+          .orderBy('priority', descending: true)
+          .orderBy('articleNumber')
+          .get();
 
-      // Cargar el archivo JSON desde assets
-      final String jsonString = await rootBundle.loadString(
-        'assets/data/reglamento.json',
-      );
-      final List<dynamic> jsonList = jsonDecode(jsonString);
+      if (querySnapshot.docs.isEmpty) {
+        print('⚠️ No se encontraron reglamentos en Firebase');
+        _articulos = [];
+        _isLoaded = true;
+        return;
+      }
 
-      // Convertir JSON a lista de artículos
-      _articulos = jsonList
-          .map((json) => Articulo.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      // Ordenar por número de artículo o prioridad
-      _articulos!.sort((a, b) {
-        // Primero por prioridad si existe
-        if (a.prioridad != null && b.prioridad != null) {
-          return a.prioridad!.compareTo(b.prioridad!);
+      final List<Articulo> articulos = [];
+      
+      for (final doc in querySnapshot.docs) {
+        try {
+          final data = doc.data();
+          final articulo = _convertFirestoreToArticulo(doc.id, data);
+          articulos.add(articulo);
+        } catch (e) {
+          print('⚠️ Error procesando artículo ${doc.id}: $e');
+          continue;
         }
+      }
 
-        // Luego por número de artículo
-        return a.numero.compareTo(b.numero);
-      });
-
+      _articulos = articulos;
       _isLoaded = true;
-      print('✅ Reglamento cargado: ${_articulos!.length} artículos');
+      
+      print('✅ Cargados ${articulos.length} artículos desde Firebase');
     } catch (e) {
-      _lastError = 'Error cargando reglamento: $e';
+      _lastError = 'Error cargando desde Firebase: $e';
       _isLoaded = false;
       print('❌ $_lastError');
       rethrow;
     }
   }
-}
 
-/// Utilidades para trabajar con el reglamento
-class ReglamentoUtils {
-  /// Validar estructura del JSON del reglamento
-  static bool validarEstructuraJson(Map<String, dynamic> json) {
-    final camposRequeridos = ['id', 'numero', 'titulo', 'contenido'];
+  /// Convertir documento de Firestore a modelo Articulo
+  Articulo _convertFirestoreToArticulo(String docId, Map<String, dynamic> data) {
+    return Articulo(
+      id: data['originalId'] ?? docId,
+      numero: data['articleNumber'] ?? '',
+      titulo: data['title'] ?? '',
+      contenido: data['content'] ?? '',
+      categoria: data['category'] ?? 'General',
+      palabrasClave: List<String>.from(data['tags'] ?? []),
+      // resumen: data['summary'] ?? '',
+      prioridad: data['priority'] ?? 1,
+      // fuente: data['source'] ?? '', // Campo no existe en el modelo
+    );
+  }
 
-    for (final campo in camposRequeridos) {
-      if (!json.containsKey(campo) || json[campo] == null) {
-        return false;
+  /// Buscar artículos por término
+  Future<List<Articulo>> buscarArticulos(String termino) async {
+    if (!_isLoaded) {
+      await _cargarReglamento();
+    }
+
+    if (_articulos == null || _articulos!.isEmpty) {
+      return [];
+    }
+
+    final terminoLower = termino.toLowerCase();
+    
+    return _articulos!.where((articulo) {
+      return articulo.titulo.toLowerCase().contains(terminoLower) ||
+             articulo.contenido.toLowerCase().contains(terminoLower) ||
+             articulo.numero.toLowerCase().contains(terminoLower) ||
+             (articulo.categoria?.toLowerCase().contains(terminoLower) ?? false) ||
+             articulo.palabrasClave.any((palabra) => 
+                 palabra.toLowerCase().contains(terminoLower));
+    }).toList();
+  }
+
+  /// Buscar artículos por categoría
+  Future<List<Articulo>> buscarPorCategoria(String categoria) async {
+    if (!_isLoaded) {
+      await _cargarReglamento();
+    }
+
+    if (_articulos == null) return [];
+
+    return _articulos!.where((articulo) => 
+        (articulo.categoria?.toLowerCase().contains(categoria.toLowerCase()) ?? false)
+    ).toList();
+  }
+
+  /// Obtener artículo por ID
+  Future<Articulo?> obtenerArticuloPorId(String id) async {
+    if (!_isLoaded) {
+      await _cargarReglamento();
+    }
+
+    if (_articulos == null) return null;
+
+    try {
+      return _articulos!.firstWhere((articulo) => articulo.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Obtener categorías únicas
+  Future<List<String>> obtenerCategorias() async {
+    if (!_isLoaded) {
+      await _cargarReglamento();
+    }
+
+    if (_articulos == null) return [];
+
+    final Set<String> categorias = {};
+    for (final articulo in _articulos!) {
+      if (articulo.categoria != null) {
+        categorias.add(articulo.categoria!);
       }
     }
 
-    return true;
+    return categorias.toList()..sort();
   }
 
+  /// Obtener artículos por categoría (alias para compatibilidad)
+  Future<List<Articulo>> obtenerArticulosPorCategoria(String categoria) async {
+    return await buscarPorCategoria(categoria);
+  }
+
+  /// Buscar artículos por consulta (con umbral, alias para compatibilidad)
+  Future<List<Articulo>> buscarArticulosConUmbral(String consulta, {double umbralMinimo = 0.5}) async {
+    // Por ahora ignoramos el umbral y usamos búsqueda simple
+    return await buscarArticulos(consulta);
+  }
+
+  /// Obtener artículos relacionados (simulado por ahora)
+  Future<List<Articulo>> obtenerArticulosRelacionados(String articuloId, {int limite = 5}) async {
+    final articulo = await obtenerArticuloPorId(articuloId);
+    if (articulo == null) return [];
+
+    // Buscar artículos relacionados por palabras clave usando búsqueda interna
+    final relacionados = <Articulo>[];
+    if (!_isLoaded) {
+      await _cargarReglamento();
+    }
+    
+    if (_articulos == null) return [];
+    
+    for (final palabra in articulo.palabrasClave) {
+      final palabraLower = palabra.toLowerCase();
+      final encontrados = _articulos!.where((art) => 
+        art.id != articuloId &&
+        (art.titulo.toLowerCase().contains(palabraLower) ||
+         art.contenido.toLowerCase().contains(palabraLower) ||
+         art.palabrasClave.any((p) => p.toLowerCase().contains(palabraLower)))
+      ).toList();
+      relacionados.addAll(encontrados);
+    }
+
+    // Remover duplicados y limitar
+    final Set<String> idsVistos = {};
+    final List<Articulo> unicos = [];
+    for (final art in relacionados) {
+      if (!idsVistos.contains(art.id) && unicos.length < limite) {
+        idsVistos.add(art.id);
+        unicos.add(art);
+      }
+    }
+
+    return unicos;
+  }
+
+  /// Recargar desde Firebase (actualizar caché)
+  Future<void> recargar() async {
+    _isLoaded = false;
+    _articulos = null;
+    _lastError = null;
+    await _cargarReglamento();
+  }
+
+  /// Stream de artículos (para actualizaciones en tiempo real)
+  Stream<List<Articulo>> get articulosStream {
+    return _firestore
+        .collection('regulations')
+        .where('isActive', isEqualTo: true)
+        .orderBy('priority', descending: true)
+        .orderBy('articleNumber')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return _convertFirestoreToArticulo(doc.id, doc.data());
+      }).toList();
+    });
+  }
+
+  /// Verificar estado de migración
+  Future<bool> verificarMigracion() async {
+    try {
+      return await _migrator.areRegulationsMigrated();
+    } catch (e) {
+      print('Error verificando migración: $e');
+      return false;
+    }
+  }
+
+  /// Contar artículos disponibles
+  Future<int> contarArticulos() async {
+    try {
+      return await _migrator.countRegulationsInFirebase();
+    } catch (e) {
+      print('Error contando artículos: $e');
+      return 0;
+    }
+  }
+
+  /// Limpiar caché
+  void limpiarCache() {
+    _isLoaded = false;
+    _articulos = null;
+    _lastError = null;
+  }
+
+  /// Generar contexto para Gemini (método de compatibilidad)
+  Future<String> generarContextoParaGemini(String mensaje) async {
+    final articulos = await this.articulos;
+    if (articulos.isEmpty) return '';
+
+    // Buscar artículos relevantes
+    final relevantes = await buscarArticulos(mensaje);
+    
+    if (relevantes.isEmpty) return '';
+
+    final contexto = StringBuffer();
+    contexto.writeln('Artículos del Reglamento Estudiantil del IPN relevantes:');
+    
+    for (final articulo in relevantes.take(3)) {
+      contexto.writeln('\n--- ${articulo.numero}: ${articulo.titulo} ---');
+      contexto.writeln(articulo.contenido);
+      if (articulo.categoria != null) {
+        contexto.writeln('Categoría: ${articulo.categoria}');
+      }
+    }
+    
+    return contexto.toString();
+  }
+
+  /// Obtener sugerencias (método de compatibilidad)
+  Future<List<String>> obtenerSugerencias(String consultaParcial) async {
+    if (consultaParcial.length < 2) return [];
+    
+    final articulos = await this.articulos;
+    final sugerencias = <String>[];
+    
+    // Buscar en títulos y palabras clave
+    for (final articulo in articulos) {
+      if (articulo.titulo.toLowerCase().contains(consultaParcial.toLowerCase())) {
+        sugerencias.add(articulo.titulo);
+      }
+      
+      for (final palabra in articulo.palabrasClave) {
+        if (palabra.toLowerCase().contains(consultaParcial.toLowerCase()) &&
+            !sugerencias.contains(palabra)) {
+          sugerencias.add(palabra);
+        }
+      }
+      
+      if (sugerencias.length >= 5) break;
+    }
+    
+    return sugerencias;
+  }
+}
+
+/// Utilidades para el reglamento (clase estática para compatibilidad)
+class ReglamentoUtils {
   /// Generar estadísticas del reglamento
   static Map<String, dynamic> generarEstadisticas(List<Articulo> articulos) {
     final categorias = <String, int>{};
@@ -286,52 +386,5 @@ class ReglamentoUtils {
           ? (articulosConPalabrasClave / articulos.length) * 100
           : 0,
     };
-  }
-
-  /// Generar reporte de cobertura de búsqueda
-  static Map<String, dynamic> generarReporteCobertura(
-    List<Articulo> articulos,
-    List<String> consultasPrueba,
-  ) {
-    final resultados = <String, List<Articulo>>{};
-
-    for (final consulta in consultasPrueba) {
-      resultados[consulta] = articulos.buscarPorConsulta(consulta);
-    }
-
-    final consultasConResultados = resultados.values
-        .where((resultados) => resultados.isNotEmpty)
-        .length;
-
-    return {
-      'consultas_totales': consultasPrueba.length,
-      'consultas_con_resultados': consultasConResultados,
-      'porcentaje_cobertura': consultasPrueba.isNotEmpty
-          ? (consultasConResultados / consultasPrueba.length) * 100
-          : 0,
-      'resultados_detallados': resultados.map(
-        (consulta, arts) => MapEntry(consulta, arts.length),
-      ),
-    };
-  }
-}
-
-/// Extensión para facilitar el uso del servicio
-extension ReglamentoServiceExtension on ReglamentoService {
-  /// Buscar y generar contexto para Gemini en una sola operación
-  Future<String> buscarYGenerarContexto(String consulta) async {
-    return await generarContextoParaGemini(consulta);
-  }
-
-  /// Verificar si una consulta tiene resultados
-  Future<bool> tieneResultados(String consulta) async {
-    final resultados = await buscarArticulos(consulta);
-    return resultados.isNotEmpty;
-  }
-
-  /// Obtener resumen rápido de un artículo
-  Future<String?> obtenerResumenArticulo(String articuloId) async {
-    final articulo = await obtenerArticuloPorId(articuloId);
-    return articulo?.resumen;
   }
 }

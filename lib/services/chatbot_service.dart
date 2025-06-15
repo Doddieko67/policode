@@ -78,7 +78,6 @@ class ChatbotService {
       // Obtener artículos relacionados para metadata
       final articulosRelacionados = await _reglamentoService.buscarArticulos(
         mensajeUsuario,
-        umbralMinimo: 0.3,
       );
 
       // Buscar posts relacionados en el foro

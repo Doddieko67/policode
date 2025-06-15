@@ -301,6 +301,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Navigator.pushNamed(context, '/admin/logs');
           },
         ),
+        const SizedBox(height: 12),
+        _buildActionTile(
+          context: context,
+          theme: theme,
+          icon: Icons.cloud_sync,
+          title: 'Migración de Datos',
+          subtitle: 'Migrar reglamentos a Firebase',
+          color: Colors.teal,
+          onTap: () {
+            Navigator.pushNamed(context, '/admin/migration');
+          },
+        ),
       ],
     );
   }

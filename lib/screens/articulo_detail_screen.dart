@@ -141,10 +141,14 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
   PreferredSizeWidget _buildAppBar(ThemeData theme) {
     return AppBar(
       elevation: 1,
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.colorScheme.onPrimary,
       title: Text(
         _articulo?.numero ?? 'Artículo',
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onPrimary,
+        ),
       ),
       actions: [
         if (_articulo != null) ...[
@@ -215,7 +219,8 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
             _buildArticuloHeader(),
             _buildArticuloContent(),
             if (_articulo!.palabrasClave.isNotEmpty) _buildPalabrasClave(),
-            if (_articulo!.categoria != null) _buildCategoria(),
+            // Categoría ocultada según retroalimentación
+            // if (_articulo!.categoria != null) _buildCategoria(),
             _buildMetadatos(),
             if (_articulosRelacionados.isNotEmpty)
               _buildArticulosRelacionados(),
@@ -281,30 +286,22 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
 
           const SizedBox(height: 12),
 
-          // Información adicional
-          if (_articulo!.categoria != null) ...[
-            Icon(
-              Icons.category,
-              color: Colors.white.withOpacity(0.8),
-              size: 16,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _articulo!.categoria!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.white.withOpacity(0.9),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-          Icon(Icons.schedule, color: Colors.white.withOpacity(0.8), size: 16),
-          const SizedBox(height: 4),
-          Text(
-            _calcularTiempoLectura(),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-            ),
-          ),
+          // Información adicional - Categoría ocultada según retroalimentación
+          // if (_articulo!.categoria != null) ...[
+          //   Icon(
+          //     Icons.category,
+          //     color: Colors.white.withOpacity(0.8),
+          //     size: 16,
+          //   ),
+          //   const SizedBox(height: 4),
+          //   Text(
+          //     _articulo!.categoria!,
+          //     style: theme.textTheme.bodySmall?.copyWith(
+          //       color: Colors.white.withOpacity(0.9),
+          //     ),
+          //   ),
+          //   const SizedBox(height: 16),
+          // ],
         ],
       ),
     );
@@ -326,13 +323,19 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.article, color: theme.primaryColor, size: 20),
+              Icon(Icons.article, 
+                color: theme.brightness == Brightness.dark 
+                  ? theme.colorScheme.primary.withOpacity(0.9)
+                  : theme.primaryColor, 
+                size: 20),
               const SizedBox(width: 8),
               Text(
                 'Contenido del Artículo',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.primaryColor,
+                  color: theme.brightness == Brightness.dark 
+                    ? theme.colorScheme.primary.withOpacity(0.9)
+                    : theme.primaryColor,
                 ),
               ),
             ],
@@ -345,6 +348,7 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
             style: theme.textTheme.bodyLarge?.copyWith(
               height: 1.6,
               fontSize: 16,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ],
@@ -417,6 +421,7 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
             'Categoría: ',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           Container(
@@ -455,31 +460,13 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
             'Información Adicional',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
             ),
           ),
 
           const SizedBox(height: 12),
 
-          Row(
-            children: [
-              _buildMetadatoItem(
-                Icons.text_fields,
-                'Palabras',
-                '${_articulo!.contenido.split(' ').length}',
-                theme,
-              ),
-              const SizedBox(width: 24),
-              _buildMetadatoItem(
-                Icons.access_time,
-                'Lectura',
-                _calcularTiempoLectura(),
-                theme,
-              ),
-            ],
-          ),
-
           if (_articulo!.fechaActualizacion != null) ...[
-            const SizedBox(height: 12),
             Row(
               children: [
                 Icon(
@@ -539,7 +526,7 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
                 'Artículos Relacionados',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.primaryColor,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -561,7 +548,7 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
                     numero: articulo.numero,
                     titulo: articulo.titulo,
                     contenido: articulo.contenido,
-                    categoria: articulo.categoria,
+                    categoria: null, // Ocultar categoría según retroalimentación
                     palabrasClave: articulo.palabrasClave,
                     onTap: () => _navegarAArticulo(articulo.id),
                     showActions: false,
@@ -609,17 +596,11 @@ class _ArticuloDetailScreenState extends State<ArticuloDetailScreen> {
       icon: Icons.keyboard_arrow_up,
       onPressed: _scrollToTop,
       tooltip: 'Ir al inicio',
-      backgroundColor: theme.primaryColor,
+      backgroundColor: theme.primaryColor.withOpacity(0.9),
     );
   }
 
   // Métodos de utilidad
-  String _calcularTiempoLectura() {
-    final palabras = _articulo!.contenido.split(' ').length;
-    final minutos = (palabras / 200).ceil(); // ~200 palabras por minuto
-    return '${minutos}min';
-  }
-
   String _formatearFecha(DateTime fecha) {
     return '${fecha.day}/${fecha.month}/${fecha.year}';
   }

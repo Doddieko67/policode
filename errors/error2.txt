@@ -1,10 +1,36 @@
 Launching lib/main.dart on 2201116PG in debug mode...
 Running Gradle task 'assembleDebug'...                          
-lib/services/forum_service.dart:98:64: Error: The method 'toMap' isn't defined for the class 'MediaAttachment'.
- - 'MediaAttachment' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
-Try correcting the name to the name of an existing method, or defining a method named 'toMap'.
-        'mediaAttachments': post.mediaAttachments.map((m) => m.toMap()).toList(),
-                                                               ^^^^^
+lib/services/forum_service.dart:182:49: Error: Too few positional arguments: 2 required, 1 given.
+          .map((doc) => ForumReply.fromFirestore(doc.data() as Map<String, dynamic>))
+                                                ^
+lib/models/forum_model.dart:241:11: Context: Found this candidate, but the arguments don't match.
+  factory ForumReply.fromFirestore(Map<String, dynamic> data, String docId) {
+          ^^^^^^^^^^^^^
+lib/services/forum_service.dart:183:12: Error: A value of type 'List<dynamic>' can't be returned from an async function with return type 'Future<List<ForumReply>>'.
+ - 'List' is from 'dart:core'.
+ - 'Future' is from 'dart:async'.
+ - 'ForumReply' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
+          .toList();
+           ^
+lib/services/forum_service.dart:420:39: Error: Too many positional arguments: 1 allowed, but 2 found.
+Try removing the extra positional arguments.
+        return ForumPost.fromFirestore(data, doc.id);
+                                      ^
+lib/models/forum_model.dart:114:11: Context: Found this candidate, but the arguments don't match.
+  factory ForumPost.fromFirestore(Map<String, dynamic> data) {
+          ^^^^^^^^^^^^^
+lib/services/forum_service.dart:421:10: Error: A value of type 'List<dynamic>' can't be returned from an async function with return type 'Future<List<ForumPost>>'.
+ - 'List' is from 'dart:core'.
+ - 'Future' is from 'dart:async'.
+ - 'ForumPost' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
+      }).toList();
+         ^
+lib/models/forum_model.dart:225:9: Error: Constructor is marked 'const' so all fields must be final.
+  const ForumReply({
+        ^
+lib/models/forum_model.dart:223:11: Context: Field isn't final, but constructor is 'const'.
+  String? postTitulo; // Para mostrar contexto en "Mis foros"
+          ^
 Target kernel_snapshot_program failed: Exception
 
 
@@ -21,5 +47,5 @@ Execution failed for task ':app:compileFlutterBuildDebug'.
 > Get more help at https://help.gradle.org.
 
 BUILD FAILED in 2s
-Running Gradle task 'assembleDebug'...                           2,832ms
+Running Gradle task 'assembleDebug'...                           2,869ms
 Error: Gradle task assembleDebug failed with exit code 1

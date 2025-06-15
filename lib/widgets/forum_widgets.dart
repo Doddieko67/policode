@@ -7,7 +7,7 @@ import 'package:policode/widgets/media_widgets.dart';
 import 'package:intl/intl.dart';
 
 /// Widget para mostrar un post del foro en lista
-class ForumPostCard extends StatelessWidget {
+class ForumPostCard extends StatefulWidget {
   final ForumPost post;
   final VoidCallback? onTap;
   final VoidCallback? onLike;
@@ -24,6 +24,36 @@ class ForumPostCard extends StatelessWidget {
   });
 
   @override
+  State<ForumPostCard> createState() => _ForumPostCardState();
+}
+
+class _ForumPostCardState extends State<ForumPostCard> {
+  final ForumService _forumService = ForumService();
+  final AuthService _authService = AuthService();
+  bool? _hasUserLiked;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLikeStatus();
+  }
+
+  Future<void> _loadLikeStatus() async {
+    if (!_authService.isSignedIn) return;
+    
+    try {
+      final hasLiked = await _forumService.hasUserLikedPost(widget.post.id, _authService.currentUser!.uid);
+      if (mounted) {
+        setState(() {
+          _hasUserLiked = hasLiked;
+        });
+      }
+    } catch (e) {
+      // Error silencioso para el estado del like
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -33,7 +63,7 @@ class ForumPostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -45,9 +75,9 @@ class ForumPostCard extends StatelessWidget {
               _buildTitle(theme),
               const SizedBox(height: 8),
               _buildContent(theme),
-              if (post.mediaAttachments.isNotEmpty) ...[
+              if (widget.post.mediaAttachments.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                MediaPreview(attachments: post.mediaAttachments),
+                MediaPreview(attachments: widget.post.mediaAttachments),
               ],
               const SizedBox(height: 16),
               _buildFooter(theme),
@@ -63,13 +93,13 @@ class ForumPostCard extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 16,
-          backgroundColor: theme.primaryColor.withOpacity(0.1),
+          backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
           child: Text(
-            post.autorNombre.isNotEmpty 
-                ? post.autorNombre[0].toUpperCase() 
+            widget.post.autorNombre.isNotEmpty 
+                ? widget.post.autorNombre[0].toUpperCase() 
                 : 'U',
             style: TextStyle(
-              color: theme.primaryColor,
+              color: theme.colorScheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),
@@ -81,13 +111,13 @@ class ForumPostCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                post.autorNombre,
+                widget.post.autorNombre,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
-                DateFormat('dd/MM/yyyy HH:mm').format(post.fechaCreacion),
+                DateFormat('dd/MM/yyyy HH:mm').format(widget.post.fechaCreacion),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -104,7 +134,7 @@ class ForumPostCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (post.isPinned)
+        if (widget.post.isPinned)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
@@ -127,8 +157,8 @@ class ForumPostCard extends StatelessWidget {
               ],
             ),
           ),
-        if (showPopularityBadge && post.likes > 5) ...[
-          if (post.isPinned) const SizedBox(width: 4),
+        if (widget.showPopularityBadge && widget.post.likes > 5) ...[
+          if (widget.post.isPinned) const SizedBox(width: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
@@ -152,8 +182,8 @@ class ForumPostCard extends StatelessWidget {
             ),
           ),
         ],
-        if (post.categoria != null) ...[
-          if (post.isPinned || (showPopularityBadge && post.likes > 5)) 
+        if (widget.post.categoria != null) ...[
+          if (widget.post.isPinned || (widget.showPopularityBadge && widget.post.likes > 5)) 
             const SizedBox(width: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -162,7 +192,7 @@ class ForumPostCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              post.categoria!,
+              widget.post.categoria!,
               style: TextStyle(
                 color: theme.colorScheme.onSecondaryContainer,
                 fontSize: 10,
@@ -177,7 +207,7 @@ class ForumPostCard extends StatelessWidget {
 
   Widget _buildTitle(ThemeData theme) {
     return Text(
-      post.titulo,
+      widget.post.titulo,
       style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
       ),
@@ -188,7 +218,7 @@ class ForumPostCard extends StatelessWidget {
 
   Widget _buildContent(ThemeData theme) {
     return Text(
-      post.contenido,
+      widget.post.contenido,
       style: theme.textTheme.bodyMedium?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
         height: 1.4,
@@ -199,26 +229,26 @@ class ForumPostCard extends StatelessWidget {
   }
 
   Widget _buildFooter(ThemeData theme) {
-    final isOwnPost = currentUserId != null && currentUserId == post.autorId;
-    
     return Row(
       children: [
         InkWell(
-          onTap: onLike,
+          onTap: _authService.isSignedIn && _hasUserLiked != null ? widget.onLike : null,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.all(4),
             child: Row(
               children: [
                 Icon(
-                  isOwnPost ? Icons.favorite : Icons.favorite_border,
+                  (_hasUserLiked ?? false) ? Icons.thumb_up : Icons.thumb_up_outlined,
                   size: 16,
-                  color: isOwnPost ? Colors.red : theme.colorScheme.onSurfaceVariant,
+                  color:theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${post.likes}',
-                  style: theme.textTheme.bodySmall,
+                  '${widget.post.likes}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -234,16 +264,16 @@ class ForumPostCard extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              '${post.respuestas}',
+              '${widget.post.respuestas}',
               style: theme.textTheme.bodySmall,
             ),
           ],
         ),
         const Spacer(),
-        if (post.tags.isNotEmpty)
+        if (widget.post.tags.isNotEmpty)
           Wrap(
             spacing: 4,
-            children: post.tags.take(2).map((tag) {
+            children: widget.post.tags.take(2).map((tag) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -266,15 +296,28 @@ class ForumPostCard extends StatelessWidget {
 }
 
 /// Widget para mostrar una respuesta del foro
-class ForumReplyCard extends StatelessWidget {
+class ForumReplyCard extends StatefulWidget {
   final ForumReply reply;
   final VoidCallback? onLike;
+  final bool? hasUserLiked;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const ForumReplyCard({
     super.key,
     required this.reply,
     this.onLike,
+    this.hasUserLiked,
+    this.onEdit,
+    this.onDelete,
   });
+
+  @override
+  State<ForumReplyCard> createState() => _ForumReplyCardState();
+}
+
+class _ForumReplyCardState extends State<ForumReplyCard> {
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -296,13 +339,13 @@ class ForumReplyCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 14,
-                backgroundColor: theme.primaryColor.withOpacity(0.1),
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
                 child: Text(
-                  reply.autorNombre.isNotEmpty 
-                      ? reply.autorNombre[0].toUpperCase() 
+                  widget.reply.autorNombre.isNotEmpty 
+                      ? widget.reply.autorNombre[0].toUpperCase() 
                       : 'U',
                   style: TextStyle(
-                    color: theme.primaryColor,
+                    color: theme.colorScheme.primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
                   ),
@@ -314,13 +357,13 @@ class ForumReplyCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      reply.autorNombre,
+                      widget.reply.autorNombre,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
-                      DateFormat('dd/MM/yyyy HH:mm').format(reply.fechaCreacion),
+                      DateFormat('dd/MM/yyyy HH:mm').format(widget.reply.fechaCreacion),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         fontSize: 11,
@@ -329,38 +372,76 @@ class ForumReplyCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const Spacer(),
+              if (_authService.isSignedIn && 
+                  _authService.currentUser!.uid == widget.reply.autorId)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit' && widget.onEdit != null) {
+                      widget.onEdit!();
+                    } else if (value == 'delete' && widget.onDelete != null) {
+                      widget.onDelete!();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 16),
+                          SizedBox(width: 8),
+                          Text('Editar'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Eliminar', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  icon: const Icon(Icons.more_vert, size: 16),
+                ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            reply.contenido,
+            widget.reply.contenido,
             style: theme.textTheme.bodyMedium?.copyWith(
               height: 1.4,
             ),
           ),
-          if (reply.mediaAttachments.isNotEmpty) ...[
+          if (widget.reply.mediaAttachments.isNotEmpty) ...[
             const SizedBox(height: 12),
-            MediaPreview(attachments: reply.mediaAttachments, maxItems: 2),
+            MediaPreview(attachments: widget.reply.mediaAttachments, maxItems: 2),
           ],
           const SizedBox(height: 12),
           Row(
             children: [
               InkWell(
-                onTap: onLike,
+                onTap: _authService.isSignedIn && widget.hasUserLiked != null ? widget.onLike : null,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Row(
                     children: [
                       Icon(
-                        Icons.thumb_up_outlined,
+                        (widget.hasUserLiked ?? false) ? Icons.thumb_up : Icons.thumb_up_outlined,
                         size: 14,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${reply.likes}',
-                        style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                        '${widget.reply.likes}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),

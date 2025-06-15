@@ -220,6 +220,7 @@ class ForumReply extends Equatable {
   final String? replyToId; // Para respuestas anidadas
   final bool isDeleted;
   final List<MediaAttachment> mediaAttachments;
+  final String? postTitulo; // Para mostrar contexto en "Mis posts"
 
   const ForumReply({
     required this.id,
@@ -233,12 +234,13 @@ class ForumReply extends Equatable {
     this.replyToId,
     this.isDeleted = false,
     this.mediaAttachments = const [],
+    this.postTitulo,
   });
 
   /// Crear desde Firestore
-  factory ForumReply.fromFirestore(Map<String, dynamic> data) {
+  factory ForumReply.fromFirestore(Map<String, dynamic> data, String docId) {
     return ForumReply(
-      id: data['id'] ?? '',
+      id: docId,
       postId: data['postId'] ?? '',
       contenido: data['contenido'] ?? '',
       autorId: data['autorId'] ?? '',
@@ -285,6 +287,7 @@ class ForumReply extends Equatable {
     String? replyToId,
     bool? isDeleted,
     List<MediaAttachment>? mediaAttachments,
+    String? postTitulo,
   }) {
     return ForumReply(
       id: id ?? this.id,
@@ -298,6 +301,7 @@ class ForumReply extends Equatable {
       replyToId: replyToId ?? this.replyToId,
       isDeleted: isDeleted ?? this.isDeleted,
       mediaAttachments: mediaAttachments ?? this.mediaAttachments,
+      postTitulo: postTitulo ?? this.postTitulo,
     );
   }
 
@@ -314,6 +318,7 @@ class ForumReply extends Equatable {
         replyToId,
         isDeleted,
         mediaAttachments,
+        postTitulo,
       ];
 }
 

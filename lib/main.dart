@@ -9,8 +9,7 @@ import 'package:policode/screens/articulo_detail_screen.dart';
 import 'package:policode/screens/forum_screen.dart';
 import 'package:policode/screens/create_post_screen.dart';
 import 'package:policode/screens/reglamentos_screen.dart';
-import 'package:policode/screens/chats_list_screen.dart';
-import 'package:policode/screens/private_chat_screen.dart';
+import 'package:policode/screens/mis_posts_screen.dart';
 import 'package:policode/services/firebase_config.dart';
 
 import 'package:policode/core/themes/app_theme.dart';
@@ -127,8 +126,7 @@ class PoliCodeApp extends StatelessWidget {
       '/create-post': (context) => const CreatePostScreen(),
       '/articulo': (context) => const ArticuloDetailScreen(),
       '/reglamentos': (context) => const ReglamentosScreen(),
-      '/chats': (context) => const ChatsListScreen(),
-      '/private-chat': (context) => const PrivateChatScreen(),
+      '/mis-posts': (context) => const MisPostsScreen(),
     };
   }
 }

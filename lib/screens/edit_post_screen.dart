@@ -38,6 +38,10 @@ class _EditPostScreenState extends State<EditPostScreen> {
   List<XFile> _selectedVideos = [];
   List<PlatformFile> _selectedDocuments = [];
   
+  // Medios existentes (del post original)
+  List<MediaAttachment> _existingMedia = [];
+  List<String> _mediaToDelete = []; // IDs de medios a eliminar
+  
   bool _isSubmitting = false;
   bool _isUploading = false;
 
@@ -61,8 +65,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
     _selectedCategory = widget.post.categoria;
     _tags = List.from(widget.post.tags);
     
-    // TODO: Si hay medios existentes, cargarlos
-    // Por ahora no cargamos medios existentes para simplicidad
+    // Cargar medios existentes
+    _existingMedia = List.from(widget.post.mediaAttachments);
   }
 
   @override
@@ -285,23 +289,33 @@ class _EditPostScreenState extends State<EditPostScreen> {
           ],
         ),
         
-        // Mostrar archivos seleccionados
-        if (_selectedImages.isNotEmpty ||
+        // Mostrar medios existentes y nuevos archivos seleccionados
+        if (_existingMedia.isNotEmpty ||
+            _selectedImages.isNotEmpty ||
             _selectedVideos.isNotEmpty ||
             _selectedDocuments.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _buildSelectedMedia(),
+          _buildMediaPreview(),
         ],
       ],
     );
   }
 
-  Widget _buildSelectedMedia() {
+  Widget _buildMediaPreview() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Mostrar medios existentes
+        if (_existingMedia.isNotEmpty) ...[
+          const Text('Archivos actuales:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          _buildExistingMedia(),
+          const SizedBox(height: 16),
+        ],
+        
+        // Mostrar nuevas imágenes seleccionadas
         if (_selectedImages.isNotEmpty) ...[
-          const Text('Imágenes:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Nuevas imágenes:', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           SizedBox(
             height: 100,
@@ -354,8 +368,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
           const SizedBox(height: 16),
         ],
         
+        // Mostrar nuevos documentos seleccionados
         if (_selectedDocuments.isNotEmpty) ...[
-          const Text('Documentos:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Nuevos documentos:', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           ...(_selectedDocuments.map((doc) {
             return ListTile(
@@ -371,6 +386,177 @@ class _EditPostScreenState extends State<EditPostScreen> {
               ),
             );
           }).toList()),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildExistingMedia() {
+    final existingImages = _existingMedia.where((m) => m.type == MediaType.image).toList();
+    final existingVideos = _existingMedia.where((m) => m.type == MediaType.video).toList();
+    final existingDocs = _existingMedia.where((m) => m.type == MediaType.document).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Imágenes existentes
+        if (existingImages.isNotEmpty) ...[
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: existingImages.length,
+              itemBuilder: (context, index) {
+                final media = existingImages[index];
+                final isMarkedForDeletion = _mediaToDelete.contains(media.id);
+                
+                return Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      Opacity(
+                        opacity: isMarkedForDeletion ? 0.5 : 1.0,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            media.url,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.image_not_supported),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      if (isMarkedForDeletion)
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.delete_forever,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (isMarkedForDeletion) {
+                                _mediaToDelete.remove(media.id);
+                              } else {
+                                _mediaToDelete.add(media.id);
+                              }
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isMarkedForDeletion ? Colors.green : Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isMarkedForDeletion ? Icons.undo : Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // Videos existentes
+        if (existingVideos.isNotEmpty) ...[
+          ...existingVideos.map((media) {
+            final isMarkedForDeletion = _mediaToDelete.contains(media.id);
+            return ListTile(
+              leading: Icon(
+                Icons.video_library,
+                color: isMarkedForDeletion ? Colors.grey : null,
+              ),
+              title: Text(
+                media.fileName,
+                style: TextStyle(
+                  decoration: isMarkedForDeletion ? TextDecoration.lineThrough : null,
+                  color: isMarkedForDeletion ? Colors.grey : null,
+                ),
+              ),
+              subtitle: const Text('Video'),
+              trailing: IconButton(
+                icon: Icon(
+                  isMarkedForDeletion ? Icons.undo : Icons.close,
+                  color: isMarkedForDeletion ? Colors.green : Colors.red,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (isMarkedForDeletion) {
+                      _mediaToDelete.remove(media.id);
+                    } else {
+                      _mediaToDelete.add(media.id);
+                    }
+                  });
+                },
+              ),
+            );
+          }).toList(),
+        ],
+
+        // Documentos existentes
+        if (existingDocs.isNotEmpty) ...[
+          ...existingDocs.map((media) {
+            final isMarkedForDeletion = _mediaToDelete.contains(media.id);
+            return ListTile(
+              leading: Icon(
+                Icons.attach_file,
+                color: isMarkedForDeletion ? Colors.grey : null,
+              ),
+              title: Text(
+                media.fileName,
+                style: TextStyle(
+                  decoration: isMarkedForDeletion ? TextDecoration.lineThrough : null,
+                  color: isMarkedForDeletion ? Colors.grey : null,
+                ),
+              ),
+              subtitle: const Text('Documento'),
+              trailing: IconButton(
+                icon: Icon(
+                  isMarkedForDeletion ? Icons.undo : Icons.close,
+                  color: isMarkedForDeletion ? Colors.green : Colors.red,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (isMarkedForDeletion) {
+                      _mediaToDelete.remove(media.id);
+                    } else {
+                      _mediaToDelete.add(media.id);
+                    }
+                  });
+                },
+              ),
+            );
+          }).toList(),
         ],
       ],
     );
@@ -476,6 +662,11 @@ class _EditPostScreenState extends State<EditPostScreen> {
         setState(() => _isUploading = false);
       }
 
+      // Filtrar medios existentes (remover los marcados para eliminación)
+      final remainingExistingMedia = _existingMedia
+          .where((media) => !_mediaToDelete.contains(media.id))
+          .toList();
+
       // Crear post actualizado
       final updatedPost = ForumPost(
         id: widget.post.id,
@@ -489,9 +680,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
         tags: _tags,
         likes: widget.post.likes,
         respuestas: widget.post.respuestas,
-        mediaAttachments: newMediaAttachments.isNotEmpty ? 
-            [...widget.post.mediaAttachments, ...newMediaAttachments] : 
-            widget.post.mediaAttachments,
+        mediaAttachments: [...remainingExistingMedia, ...newMediaAttachments],
         isPinned: widget.post.isPinned,
         isClosed: widget.post.isClosed,
       );

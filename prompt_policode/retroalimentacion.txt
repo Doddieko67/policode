@@ -1,0 +1,30 @@
+
+no se ve "Articulos Relacionados" en dark theme
+no mostrar categorias o etiquetas del reglamento
+mostrar el texto limitado 
+no se ve tanto el fondo de regresar hacia arriba
+en la ArticleDetailScreen
+
+no se ve tanto appBar en algunos Screens, especial-
+mente en ArticleDetailScreen, ni se ve el titulo en
+el mismo screen en light theme. En litgh theme, tam-
+poco se ve el appBar en screen Foro, ni en el screen 
+de Discusion.  La informacion adicional tales como
+"$num palabras % min lectura" son innecesarias, asi
+que borralas. 
+
+En dark theme, en Mis Notas, el texto activo usa
+el mismo color que el fondo pues no se ve. Mientras
+que el resto si. Asi que en lugar de modificar su color,
+sugiero que modifiques su weigh. En el Foto y en Dis-
+cusion, no se ve la foto de perfil. 
+
+En la discusion, me gustaria que añadas la funcion de 
+reportar el post. Tambien la respuesta del post, por
+cierto, me molesta que en la respuesta, al darle click
+se recargue todo el screen, sugiero que reutilices la 
+funcionalidad y el diseño de like que hay en el post 
+para implementarlo en la respuesta, aa si, y Tambien 
+la respuesta debe permitirse modificar y eliminar.
+
+No se ve "mis notas" en light theme

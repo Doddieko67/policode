@@ -179,7 +179,7 @@ class ForumService {
           .get();
 
       return snapshot.docs
-          .map((doc) => ForumReply.fromFirestore(doc.data() as Map<String, dynamic>))
+          .map((doc) => ForumReply.fromFirestore(doc.data() as Map<String, dynamic>, doc.id))
           .toList();
     } catch (e) {
       throw Exception('Error obteniendo respuestas: $e');
@@ -403,6 +403,77 @@ class ForumService {
         'totalReplies': 0,
         'totalTopics': 0,
       };
+    }
+  }
+
+  /// Obtener posts de un usuario específico
+  Future<List<ForumPost>> getPostsByUser(String userId) async {
+    try {
+      final querySnapshot = await _postsCollection
+          .where('autorId', isEqualTo: userId)
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('fechaCreacion', descending: true)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id; // Agregar el id del documento
+        return ForumPost.fromFirestore(data);
+      }).toList();
+    } catch (e) {
+      throw Exception('Error obteniendo posts del usuario: $e');
+    }
+  }
+
+  /// Obtener respuestas de un usuario específico
+  Future<List<ForumReply>> getRepliesByUser(String userId) async {
+    try {
+      final querySnapshot = await _repliesCollection
+          .where('autorId', isEqualTo: userId)
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('fechaCreacion', descending: true)
+          .get();
+
+      List<ForumReply> respuestas = [];
+      
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final respuesta = ForumReply.fromFirestore(data, doc.id);
+        
+        // Obtener el título del post para mostrar contexto
+        String? postTitulo;
+        try {
+          final postDoc = await _postsCollection.doc(respuesta.postId).get();
+          if (postDoc.exists) {
+            final postData = postDoc.data() as Map<String, dynamic>;
+            postTitulo = postData['titulo'] as String?;
+          }
+        } catch (e) {
+          // Si no se puede obtener el post, continuar sin título
+        }
+        
+        // Crear una nueva instancia con el título del post
+        final respuestaConTitulo = ForumReply(
+          id: respuesta.id,
+          postId: respuesta.postId,
+          contenido: respuesta.contenido,
+          autorId: respuesta.autorId,
+          autorNombre: respuesta.autorNombre,
+          fechaCreacion: respuesta.fechaCreacion,
+          fechaActualizacion: respuesta.fechaActualizacion,
+          likes: respuesta.likes,
+          replyToId: respuesta.replyToId,
+          isDeleted: respuesta.isDeleted,
+          mediaAttachments: respuesta.mediaAttachments,
+          postTitulo: postTitulo,
+        );
+        
+        respuestas.add(respuestaConTitulo);
+      }
+
+      return respuestas;
+    } catch (e) {
+      throw Exception('Error obteniendo respuestas del usuario: $e');
     }
   }
 }

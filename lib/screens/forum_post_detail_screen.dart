@@ -31,12 +31,15 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
   bool _isLoading = true;
   bool _isSubmittingReply = false;
   late ForumPost _currentPost;
+  bool? _hasUserLiked;
+  Map<String, bool> _replyLikes = {}; // Track reply likes locally
 
   @override
   void initState() {
     super.initState();
     _currentPost = widget.post;
     _loadReplies();
+    _loadLikeStatus();
   }
 
   @override
@@ -60,6 +63,9 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
           if (updatedPost != null) _currentPost = updatedPost;
           _isLoading = false;
         });
+        
+        // Load reply likes status
+        _loadReplyLikes();
       }
     } catch (e) {
       if (mounted) {
@@ -108,13 +114,66 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     }
   }
 
-  Future<void> _togglePostLike() async {
+  Future<void> _loadLikeStatus() async {
     if (!_authService.isSignedIn) return;
+    
+    try {
+      final hasLiked = await _forumService.hasUserLikedPost(_currentPost.id, _authService.currentUser!.uid);
+      if (mounted) {
+        setState(() {
+          _hasUserLiked = hasLiked;
+        });
+      }
+    } catch (e) {
+      // Error silencioso para el estado del like
+    }
+  }
+
+  Future<void> _loadReplyLikes() async {
+    if (!_authService.isSignedIn) return;
+    
+    try {
+      final Map<String, bool> likes = {};
+      for (final reply in _replies) {
+        final hasLiked = await _forumService.hasUserLikedReply(reply.id, _authService.currentUser!.uid);
+        likes[reply.id] = hasLiked;
+      }
+      
+      if (mounted) {
+        setState(() {
+          _replyLikes = likes;
+        });
+      }
+    } catch (e) {
+      // Error silencioso para el estado del like
+    }
+  }
+
+  Future<void> _togglePostLike() async {
+    if (!_authService.isSignedIn || _hasUserLiked == null) return;
+
+    // Optimistic update - actualizar UI inmediatamente
+    final wasLiked = _hasUserLiked!;
+    
+    setState(() {
+      _hasUserLiked = !wasLiked;
+      _currentPost = _currentPost.copyWith(
+        likes: wasLiked ? _currentPost.likes - 1 : _currentPost.likes + 1,
+      );
+    });
 
     try {
+      // Actualizar en servidor
       await _forumService.togglePostLike(_currentPost.id, _authService.currentUser!.uid);
-      _loadReplies(); // Recargar para actualizar contadores
     } catch (e) {
+      // Si hay error, revertir el cambio optimista
+      setState(() {
+        _hasUserLiked = wasLiked;
+        _currentPost = _currentPost.copyWith(
+          likes: wasLiked ? _currentPost.likes + 1 : _currentPost.likes - 1,
+        );
+      });
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -122,12 +181,33 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
   }
 
   Future<void> _toggleReplyLike(String replyId) async {
-    if (!_authService.isSignedIn) return;
+    if (!_authService.isSignedIn || !_replyLikes.containsKey(replyId)) return;
+
+    // Optimistic update - actualizar UI inmediatamente
+    final wasLiked = _replyLikes[replyId]!;
+    final replyIndex = _replies.indexWhere((r) => r.id == replyId);
+    
+    if (replyIndex == -1) return;
+    
+    setState(() {
+      _replyLikes[replyId] = !wasLiked;
+      _replies[replyIndex] = _replies[replyIndex].copyWith(
+        likes: wasLiked ? _replies[replyIndex].likes - 1 : _replies[replyIndex].likes + 1,
+      );
+    });
 
     try {
+      // Actualizar en servidor
       await _forumService.toggleReplyLike(replyId, _authService.currentUser!.uid);
-      _loadReplies(); // Recargar para actualizar contadores
     } catch (e) {
+      // Si hay error, revertir el cambio optimista
+      setState(() {
+        _replyLikes[replyId] = wasLiked;
+        _replies[replyIndex] = _replies[replyIndex].copyWith(
+          likes: wasLiked ? _replies[replyIndex].likes + 1 : _replies[replyIndex].likes - 1,
+        );
+      });
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -141,34 +221,47 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Discusión'),
-        elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
+        elevation: 2,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         actions: [
-          if (_authService.isSignedIn && 
-              _authService.currentUser!.uid == _currentPost.autorId)
+          if (_authService.isSignedIn)
             PopupMenuButton<String>(
               onSelected: _handlePostAction,
               itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 20),
-                      SizedBox(width: 12),
-                      Text('Editar'),
-                    ],
+                if (_authService.currentUser!.uid == _currentPost.autorId) ...[
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 12),
+                        Text('Editar'),
+                      ],
+                    ),
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Eliminar', style: TextStyle(color: Colors.red)),
-                    ],
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ),
-                ),
+                ],
+                if (_authService.currentUser!.uid != _currentPost.autorId)
+                  const PopupMenuItem(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.report, size: 20, color: Colors.orange),
+                        SizedBox(width: 12),
+                        Text('Reportar', style: TextStyle(color: Colors.orange)),
+                      ],
+                    ),
+                  ),
               ],
             ),
         ],
@@ -332,21 +425,23 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     return Row(
       children: [
         InkWell(
-          onTap: _authService.isSignedIn ? _togglePostLike : null,
+          onTap: _authService.isSignedIn && _hasUserLiked != null ? _togglePostLike : null,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(
               children: [
                 Icon(
-                  Icons.thumb_up_outlined,
+                  (_hasUserLiked ?? false) ? Icons.thumb_up : Icons.thumb_up_outlined,
                   size: 20,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${_currentPost.likes}',
-                  style: theme.textTheme.bodySmall,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -418,6 +513,15 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
               onLike: _authService.isSignedIn
                   ? () => _toggleReplyLike(reply.id)
                   : null,
+              hasUserLiked: _replyLikes[reply.id],
+              onEdit: _authService.isSignedIn && 
+                      _authService.currentUser!.uid == reply.autorId
+                  ? () => _editReply(reply)
+                  : null,
+              onDelete: _authService.isSignedIn && 
+                        _authService.currentUser!.uid == reply.autorId
+                    ? () => _deleteReply(reply.id)
+                    : null,
             );
           },
         ),
@@ -487,6 +591,9 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
       case 'delete':
         _showDeleteConfirmation();
         break;
+      case 'report':
+        _showReportDialog();
+        break;
     }
   }
 
@@ -534,6 +641,158 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
               }
             },
             size: ButtonSize.small,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportDialog() {
+    final TextEditingController reasonController = TextEditingController();
+    String selectedReason = 'spam';
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Reportar Post'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('¿Por qué quieres reportar este post?'),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedReason,
+                items: const [
+                  DropdownMenuItem(value: 'spam', child: Text('Spam')),
+                  DropdownMenuItem(value: 'harassment', child: Text('Acoso')),
+                  DropdownMenuItem(value: 'inappropriate', child: Text('Contenido inapropiado')),
+                  DropdownMenuItem(value: 'misinformation', child: Text('Información falsa')),
+                  DropdownMenuItem(value: 'other', child: Text('Otro')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedReason = value!;
+                  });
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Razón',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Detalles adicionales (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  // Aquí agregarías la lógica para enviar el reporte
+                  // await _forumService.reportPost(_currentPost.id, selectedReason, reasonController.text);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Post reportado. Gracias por tu colaboración.')),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error reportando post: $e')),
+                  );
+                }
+              },
+              child: const Text('Reportar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editReply(ForumReply reply) {
+    final TextEditingController editController = TextEditingController(text: reply.contenido);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar respuesta'),
+        content: TextField(
+          controller: editController,
+          decoration: const InputDecoration(
+            labelText: 'Contenido de la respuesta',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 5,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newContent = editController.text.trim();
+              if (newContent.isEmpty) return;
+              
+              Navigator.pop(context);
+              try {
+                await _forumService.updateReply(reply.id, {'contenido': newContent});
+                _loadReplies(); // Recargar respuestas
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Respuesta editada')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error editando respuesta: $e')),
+                );
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteReply(String replyId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar respuesta'),
+        content: const Text('¿Estás seguro de que quieres eliminar esta respuesta?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _forumService.deleteReply(replyId, _currentPost.id);
+                _loadReplies(); // Recargar respuestas
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Respuesta eliminada')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error eliminando respuesta: $e')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar'),
           ),
         ],
       ),

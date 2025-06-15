@@ -525,7 +525,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.pushNamed(
                     context,
-                    '/notas',
+                    '/articulo',
+                    arguments: {'articuloId': nota.articuloId},
                   ).then((_) => _cargarDatos());
                 },
                 showActions: false,

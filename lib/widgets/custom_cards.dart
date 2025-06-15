@@ -42,7 +42,13 @@ class ArticuloCard extends StatelessWidget {
       child: Card(
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.1),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
@@ -51,21 +57,32 @@ class ArticuloCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(theme),
+                _buildSimpleHeader(theme),
                 const SizedBox(height: 12),
                 _buildContent(theme),
-                if (palabrasClave.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _buildPalabrasClave(theme),
-                ],
-                if (showActions) ...[
-                  const SizedBox(height: 16),
-                  _buildActions(theme),
-                ],
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleHeader(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        numero,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.bold,
+        ),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -77,15 +94,17 @@ class ArticuloCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.primaryColor.withOpacity(0.1),
+            color: theme.colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             numero,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.primaryColor,
+              color: theme.colorScheme.onPrimaryContainer,
               fontWeight: FontWeight.bold,
             ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 12),
@@ -157,14 +176,18 @@ class ArticuloCard extends StatelessWidget {
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
           ),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 8),
         Text(
-          _truncateContent(contenido, 150),
+          contenido,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.8),
+            color: theme.colorScheme.onSurfaceVariant,
             height: 1.4,
           ),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -509,9 +532,10 @@ class NotaCard extends StatelessWidget {
           Text(
             nota.comentarioUsuario!,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
+              color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
               fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w600, // Más peso para mejor visibilidad
             ),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,

@@ -243,9 +243,9 @@ class _NotasScreenState extends State<NotasScreen>
     // el AppBarTheme no fuerce un color de texto blanco sobre un fondo blanco.
     // La forma correcta es definirlo en el tema general.
     return AppBar(
-      elevation: 0, // Un look más plano y moderno
-      backgroundColor: theme.colorScheme.surface,
-      foregroundColor: theme.colorScheme.onSurface, // Texto y iconos negros
+      elevation: 2,
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.colorScheme.onPrimary,
       title: _isSelectionMode
           ? Text('${_notasSeleccionadas.length} seleccionadas')
           : const Text('Mis Notas'),
@@ -262,9 +262,9 @@ class _NotasScreenState extends State<NotasScreen>
           ? null
           : TabBar(
               controller: _tabController,
-              labelColor: theme.primaryColor,
-              unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-              indicatorColor: theme.primaryColor,
+              labelColor: theme.colorScheme.onPrimary,
+              unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+              indicatorColor: theme.colorScheme.onPrimary,
               tabs: const [
                 Tab(text: 'Todas'),
                 Tab(text: 'Favoritas'),
@@ -276,54 +276,7 @@ class _NotasScreenState extends State<NotasScreen>
   }
 
   List<Widget> _buildNormalActions(ThemeData theme) {
-    // ... (Sin cambios)
-    return [
-      IconButton(
-        onPressed: _mostrarFiltros,
-        icon: const Icon(Icons.filter_list),
-        tooltip: 'Filtros',
-      ),
-      IconButton(
-        onPressed: _mostrarOrdenamiento,
-        icon: const Icon(Icons.sort),
-        tooltip: 'Ordenar',
-      ),
-      PopupMenuButton<String>(
-        onSelected: _handleMenuAction,
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: 'select',
-            child: Row(
-              children: [
-                Icon(Icons.checklist, size: 20),
-                SizedBox(width: 12),
-                Text('Seleccionar'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'stats',
-            child: Row(
-              children: [
-                Icon(Icons.analytics, size: 20),
-                SizedBox(width: 12),
-                Text('Estadísticas'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'export',
-            child: Row(
-              children: [
-                Icon(Icons.download, size: 20),
-                SizedBox(width: 12),
-                Text('Exportar'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ];
+    return [];
   }
 
   List<Widget> _buildSelectionActions(ThemeData theme) {

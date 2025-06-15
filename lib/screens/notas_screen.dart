@@ -243,9 +243,6 @@ class _NotasScreenState extends State<NotasScreen>
     // el AppBarTheme no fuerce un color de texto blanco sobre un fondo blanco.
     // La forma correcta es definirlo en el tema general.
     return AppBar(
-      elevation: 2,
-      backgroundColor: theme.colorScheme.primary,
-      foregroundColor: theme.colorScheme.onPrimary,
       title: _isSelectionMode
           ? Text('${_notasSeleccionadas.length} seleccionadas')
           : const Text('Mis Notas'),
@@ -262,9 +259,8 @@ class _NotasScreenState extends State<NotasScreen>
           ? null
           : TabBar(
               controller: _tabController,
-              labelColor: theme.colorScheme.onPrimary,
-              unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
-              indicatorColor: theme.colorScheme.onPrimary,
+              labelColor: theme.colorScheme.onSurface,
+              unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
               tabs: const [
                 Tab(text: 'Todas'),
                 Tab(text: 'Favoritas'),

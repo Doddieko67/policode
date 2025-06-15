@@ -24,33 +24,51 @@ class _AdminLogsScreenState extends State<AdminLogsScreen> {
     'suspend_user': 'Suspender Usuario',
     'ban_user': 'Banear Usuario',
     'reactivate_user': 'Reactivar Usuario',
+    'make_admin': 'Promover a Admin',
+    'remove_admin': 'Remover Admin',
     'delete_post': 'Eliminar Post',
     'delete_reply': 'Eliminar Respuesta',
     'upload_regulation': 'Subir Reglamento',
     'update_regulation': 'Actualizar Reglamento',
     'delete_regulation': 'Eliminar Reglamento',
+    'resolve_report': 'Resolver Reporte',
+    'dismiss_report': 'Desestimar Reporte',
+    'login_admin': 'Acceso Admin',
+    'bulk_action': 'Acción en Lote',
   };
 
   final Map<String, Color> _actionColors = {
     'suspend_user': Colors.orange,
     'ban_user': Colors.red,
     'reactivate_user': Colors.green,
+    'make_admin': Colors.purple,
+    'remove_admin': Colors.deepOrange,
     'delete_post': Colors.red,
     'delete_reply': Colors.red,
     'upload_regulation': Colors.blue,
     'update_regulation': Colors.blue,
     'delete_regulation': Colors.orange,
+    'resolve_report': Colors.green,
+    'dismiss_report': Colors.grey,
+    'login_admin': Colors.cyan,
+    'bulk_action': Colors.indigo,
   };
 
   final Map<String, IconData> _actionIcons = {
     'suspend_user': Icons.schedule,
     'ban_user': Icons.block,
     'reactivate_user': Icons.check_circle,
+    'make_admin': Icons.admin_panel_settings,
+    'remove_admin': Icons.remove_moderator,
     'delete_post': Icons.delete,
     'delete_reply': Icons.delete,
     'upload_regulation': Icons.upload,
     'update_regulation': Icons.edit,
     'delete_regulation': Icons.delete_outline,
+    'resolve_report': Icons.check,
+    'dismiss_report': Icons.close,
+    'login_admin': Icons.login,
+    'bulk_action': Icons.all_inclusive,
   };
 
   @override
@@ -68,9 +86,6 @@ class _AdminLogsScreenState extends State<AdminLogsScreen> {
         appBar: AppBar(
           title: const Text('Logs de Administración'),
           centerTitle: true,
-          elevation: 2,
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),

@@ -37,8 +37,8 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen>
     return AdminGuard(
       child: Scaffold(
         appBar: AppBar(
-        title: const Text('Gestión de Reportes'),
-        centerTitle: true,
+          title: const Text('Gestión de Reportes'),
+          centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           onTap: (index) {
@@ -59,6 +59,8 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen>
               }
             });
           },
+          labelColor: theme.colorScheme.onSurface,
+          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
           tabs: const [
             Tab(text: 'Todos'),
             Tab(text: 'Pendientes'),

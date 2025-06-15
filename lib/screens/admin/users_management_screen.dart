@@ -45,9 +45,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen>
         appBar: AppBar(
           title: const Text('Gestión de Usuarios'),
           centerTitle: true,
-          elevation: 2,
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
           bottom: TabBar(
             controller: _tabController,
             onTap: (index) {
@@ -68,9 +65,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen>
                 }
               });
             },
-            indicatorColor: theme.colorScheme.onPrimary,
-            labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+            labelColor: theme.colorScheme.onSurface,
+            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
             tabs: const [
               Tab(text: 'Todos'),
               Tab(text: 'Activos'),
@@ -770,6 +766,14 @@ class _UserDetailSheetState extends State<UserDetailSheet> {
                 Colors.purple,
                 () => _makeAdmin(),
               ),
+            ] else if (_currentUser.role == UserRole.admin) ...[
+              const SizedBox(height: 8),
+              _buildActionButton(
+                'Remover administrador',
+                Icons.remove_moderator,
+                Colors.deepOrange,
+                () => _removeAdmin(),
+              ),
             ],
           ],
         ),
@@ -909,10 +913,7 @@ class _UserDetailSheetState extends State<UserDetailSheet> {
       '¿Estás seguro de que quieres dar permisos de administrador a este usuario?',
       () async {
         try {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(_currentUser.uid)
-              .update({'role': 'admin'});
+          await widget.adminService.makeAdmin(_currentUser.uid);
           
           // Actualizar estado local
           final updatedUser = await widget.adminService.getUserById(_currentUser.uid);
@@ -932,6 +933,39 @@ class _UserDetailSheetState extends State<UserDetailSheet> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Error promoviendo usuario: $e')),
+            );
+          }
+        }
+      },
+    );
+  }
+
+  void _removeAdmin() {
+    _showConfirmationDialog(
+      'Remover Administrador',
+      '¿Estás seguro de que quieres remover los permisos de administrador de este usuario?',
+      () async {
+        try {
+          await widget.adminService.removeAdmin(_currentUser.uid);
+          
+          // Actualizar estado local
+          final updatedUser = await widget.adminService.getUserById(_currentUser.uid);
+          if (updatedUser != null && mounted) {
+            setState(() {
+              _currentUser = updatedUser;
+            });
+          }
+          
+          if (mounted) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Privilegios de administrador removidos')),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error removiendo privilegios: $e')),
             );
           }
         }

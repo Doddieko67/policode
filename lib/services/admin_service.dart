@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../models/user_model.dart';
 import '../models/report_model.dart';
 import '../models/forum_model.dart';
@@ -65,6 +66,11 @@ class AdminService {
     try {
       final suspendedUntil = DateTime.now().add(duration);
       
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
       await _firestore.collection('users').doc(uid).update({
         'status': UserStatus.suspended.name,
         'suspendedUntil': Timestamp.fromDate(suspendedUntil),
@@ -75,7 +81,7 @@ class AdminService {
       await _logAdminAction(
         action: 'suspend_user',
         targetUserId: uid,
-        details: 'Suspendido hasta: ${suspendedUntil.toIso8601String()}. Razón: $reason',
+        details: 'Usuario "$userName" suspendido hasta: ${DateFormat('dd/MM/yyyy HH:mm').format(suspendedUntil)}. Duración: ${duration.inDays > 0 ? '${duration.inDays} días' : '${duration.inHours} horas'}. Razón: $reason',
       );
     } catch (e) {
       print('Error suspendiendo usuario: $e');
@@ -86,6 +92,11 @@ class AdminService {
   // Banear usuario permanentemente
   Future<void> banUser(String uid, String reason) async {
     try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
       await _firestore.collection('users').doc(uid).update({
         'status': UserStatus.banned.name,
         'suspensionReason': reason,
@@ -95,7 +106,7 @@ class AdminService {
       await _logAdminAction(
         action: 'ban_user',
         targetUserId: uid,
-        details: 'Usuario baneado permanentemente. Razón: $reason',
+        details: 'Usuario "$userName" baneado permanentemente. Razón: $reason',
       );
     } catch (e) {
       print('Error baneando usuario: $e');
@@ -106,6 +117,12 @@ class AdminService {
   // Reactivar usuario
   Future<void> reactivateUser(String uid) async {
     try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      final previousStatus = userData['status'] ?? 'desconocido';
+      
       await _firestore.collection('users').doc(uid).update({
         'status': UserStatus.active.name,
         'suspendedUntil': null,
@@ -116,7 +133,7 @@ class AdminService {
       await _logAdminAction(
         action: 'reactivate_user',
         targetUserId: uid,
-        details: 'Usuario reactivado',
+        details: 'Usuario "$userName" reactivado (estado anterior: $previousStatus)',
       );
     } catch (e) {
       print('Error reactivando usuario: $e');
@@ -276,7 +293,7 @@ class AdminService {
     List<String> tags,
   ) async {
     try {
-      await _firestore.collection('regulations').add({
+      final docRef = await _firestore.collection('regulations').add({
         'title': title,
         'content': content,
         'category': category,
@@ -289,7 +306,8 @@ class AdminService {
       // Registrar la acción
       await _logAdminAction(
         action: 'upload_regulation',
-        details: 'Nuevo reglamento: "$title"',
+        details: 'Nuevo reglamento creado: "$title" en categoría: $category. Etiquetas: ${tags.join(', ')}',
+        contentId: docRef.id,
       );
     } catch (e) {
       print('Error subiendo reglamento: $e');
@@ -303,15 +321,37 @@ class AdminService {
     Map<String, dynamic> updates,
   ) async {
     try {
+      // Obtener información del reglamento antes del cambio
+      final regDoc = await _firestore.collection('regulations').doc(regulationId).get();
+      final regData = regDoc.data() as Map<String, dynamic>? ?? {};
+      final regTitle = regData['title'] ?? 'Reglamento sin título';
+      
       await _firestore
           .collection('regulations')
           .doc(regulationId)
           .update(updates);
 
+      // Crear descripción de los cambios
+      final changesDesc = updates.entries.map((entry) {
+        switch (entry.key) {
+          case 'title':
+            return 'Título: "${entry.value}"';
+          case 'category':
+            return 'Categoría: ${entry.value}';
+          case 'isActive':
+            return entry.value ? 'Activado' : 'Desactivado';
+          case 'tags':
+            return 'Etiquetas: ${(entry.value as List).join(', ')}';
+          default:
+            return '${entry.key}: ${entry.value}';
+        }
+      }).join(', ');
+
       // Registrar la acción
       await _logAdminAction(
         action: 'update_regulation',
-        details: 'Reglamento actualizado: $regulationId',
+        details: 'Reglamento "$regTitle" actualizado. Cambios: $changesDesc',
+        contentId: regulationId,
       );
     } catch (e) {
       print('Error actualizando reglamento: $e');
@@ -322,6 +362,11 @@ class AdminService {
   // Eliminar reglamento
   Future<void> deleteRegulation(String regulationId) async {
     try {
+      // Obtener información del reglamento antes del cambio
+      final regDoc = await _firestore.collection('regulations').doc(regulationId).get();
+      final regData = regDoc.data() as Map<String, dynamic>? ?? {};
+      final regTitle = regData['title'] ?? 'Reglamento sin título';
+      
       await _firestore
           .collection('regulations')
           .doc(regulationId)
@@ -330,10 +375,59 @@ class AdminService {
       // Registrar la acción
       await _logAdminAction(
         action: 'delete_regulation',
-        details: 'Reglamento desactivado: $regulationId',
+        details: 'Reglamento "$regTitle" desactivado',
+        contentId: regulationId,
       );
     } catch (e) {
       print('Error eliminando reglamento: $e');
+      rethrow;
+    }
+  }
+
+  // Hacer administrador
+  Future<void> makeAdmin(String uid) async {
+    try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
+      await _firestore.collection('users').doc(uid).update({
+        'role': UserRole.admin.name,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: 'make_admin',
+        targetUserId: uid,
+        details: 'Usuario "$userName" promovido a administrador',
+      );
+    } catch (e) {
+      print('Error promoviendo usuario a admin: $e');
+      rethrow;
+    }
+  }
+
+  // Remover privilegios de administrador
+  Future<void> removeAdmin(String uid) async {
+    try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
+      await _firestore.collection('users').doc(uid).update({
+        'role': UserRole.user.name,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: 'remove_admin',
+        targetUserId: uid,
+        details: 'Privilegios de administrador removidos de "$userName"',
+      );
+    } catch (e) {
+      print('Error removiendo privilegios de admin: $e');
       rethrow;
     }
   }

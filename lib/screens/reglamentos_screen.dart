@@ -108,8 +108,7 @@ class _ReglamentosScreenState extends State<ReglamentosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reglamento Estudiantil'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

@@ -13,6 +13,8 @@ import 'package:policode/screens/mis_posts_screen.dart';
 import 'package:policode/screens/admin/admin_dashboard_screen.dart';
 import 'package:policode/screens/admin/reports_management_screen.dart';
 import 'package:policode/screens/admin/regulations_management_screen.dart';
+import 'package:policode/screens/admin/users_management_screen.dart';
+import 'package:policode/screens/admin/admin_logs_screen.dart';
 import 'package:policode/services/firebase_config.dart';
 
 import 'package:policode/core/themes/app_theme.dart';
@@ -134,6 +136,8 @@ class PoliCodeApp extends StatelessWidget {
       '/admin': (context) => const AdminDashboardScreen(),
       '/admin/reports': (context) => const ReportsManagementScreen(),
       '/admin/regulations': (context) => const RegulationsManagementScreen(),
+      '/admin/users': (context) => const UsersManagementScreen(),
+      '/admin/logs': (context) => const AdminLogsScreen(),
     };
   }
 }

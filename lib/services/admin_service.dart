@@ -341,41 +341,70 @@ class AdminService {
   // Obtener estadísticas del sistema
   Future<Map<String, dynamic>> getSystemStats() async {
     try {
-      // Usuarios totales
-      final usersCount = await _firestore
-          .collection('users')
-          .count()
-          .get()
-          .then((value) => value.count ?? 0);
+      // Ejecutar todas las consultas en paralelo para mejor performance
+      final results = await Future.wait([
+        // Usuarios totales
+        _firestore.collection('users').count().get(),
+        // Posts totales
+        _firestore.collection('forum_posts').count().get(),
+        // Respuestas totales
+        _firestore.collection('forum_replies').count().get(),
+        // Reportes pendientes
+        _firestore.collection('reports')
+            .where('status', isEqualTo: ReportStatus.pending.name)
+            .count().get(),
+        // Reportes totales
+        _firestore.collection('reports').count().get(),
+        // Usuarios suspendidos
+        _firestore.collection('users')
+            .where('status', isEqualTo: UserStatus.suspended.name)
+            .count().get(),
+        // Usuarios baneados
+        _firestore.collection('users')
+            .where('status', isEqualTo: UserStatus.banned.name)
+            .count().get(),
+        // Usuarios activos (últimos 30 días)
+        _firestore.collection('users')
+            .where('status', isEqualTo: UserStatus.active.name)
+            .count().get(),
+        // Reglamentos activos
+        _firestore.collection('regulations')
+            .where('isActive', isEqualTo: true)
+            .count().get(),
+      ]);
 
-      // Posts totales
-      final postsCount = await _firestore
+      // Estadísticas adicionales
+      final now = DateTime.now();
+      final lastWeek = now.subtract(const Duration(days: 7));
+      final lastMonth = now.subtract(const Duration(days: 30));
+
+      // Posts de la última semana
+      final recentPosts = await _firestore
           .collection('forum_posts')
+          .where('fechaCreacion', isGreaterThan: Timestamp.fromDate(lastWeek))
           .count()
-          .get()
-          .then((value) => value.count ?? 0);
+          .get();
 
-      // Reportes pendientes
-      final pendingReports = await _firestore
+      // Reportes de la última semana
+      final recentReports = await _firestore
           .collection('reports')
-          .where('status', isEqualTo: ReportStatus.pending.name)
+          .where('createdAt', isGreaterThan: Timestamp.fromDate(lastWeek))
           .count()
-          .get()
-          .then((value) => value.count ?? 0);
-
-      // Usuarios suspendidos
-      final suspendedUsers = await _firestore
-          .collection('users')
-          .where('status', isEqualTo: UserStatus.suspended.name)
-          .count()
-          .get()
-          .then((value) => value.count ?? 0);
+          .get();
 
       return {
-        'totalUsers': usersCount,
-        'totalPosts': postsCount,
-        'pendingReports': pendingReports,
-        'suspendedUsers': suspendedUsers,
+        'totalUsers': results[0].count ?? 0,
+        'totalPosts': results[1].count ?? 0,
+        'totalReplies': results[2].count ?? 0,
+        'pendingReports': results[3].count ?? 0,
+        'totalReports': results[4].count ?? 0,
+        'suspendedUsers': results[5].count ?? 0,
+        'bannedUsers': results[6].count ?? 0,
+        'activeUsers': results[7].count ?? 0,
+        'activeRegulations': results[8].count ?? 0,
+        'recentPosts': recentPosts.count ?? 0,
+        'recentReports': recentReports.count ?? 0,
+        'lastUpdated': DateTime.now().toIso8601String(),
       };
     } catch (e) {
       print('Error obteniendo estadísticas: $e');

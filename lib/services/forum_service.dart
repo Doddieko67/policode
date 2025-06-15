@@ -354,6 +354,24 @@ class ForumService {
     }
   }
 
+  /// Obtener un post específico por su ID
+  Future<ForumPost?> getPostById(String postId) async {
+    try {
+      final docSnapshot = await _postsCollection.doc(postId).get();
+      
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        data['id'] = docSnapshot.id; // Agregar el id del documento
+        return ForumPost.fromFirestore(data);
+      }
+      
+      return null;
+    } catch (e) {
+      print('❌ Error obteniendo post por ID: $e');
+      throw Exception('Error obteniendo post: $e');
+    }
+  }
+
   // ===== MÉTODOS PRIVADOS =====
 
   /// Eliminar todas las respuestas de un post
@@ -409,18 +427,35 @@ class ForumService {
   /// Obtener posts de un usuario específico
   Future<List<ForumPost>> getPostsByUser(String userId) async {
     try {
-      final querySnapshot = await _postsCollection
+      print('🔍 Buscando posts para usuario: $userId');
+      
+      // Primero intentar sin filtro de isDeleted para ver si hay posts
+      final allUserPosts = await _postsCollection
           .where('autorId', isEqualTo: userId)
-          .where('isDeleted', isEqualTo: false)
           .orderBy('fechaCreacion', descending: true)
           .get();
-
-      return querySnapshot.docs.map((doc) {
+      
+      print('📊 Total posts del usuario (sin filtrar): ${allUserPosts.docs.length}');
+      
+      // Filtrar manualmente los posts no eliminados
+      final posts = <ForumPost>[];
+      for (final doc in allUserPosts.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id; // Agregar el id del documento
-        return ForumPost.fromFirestore(data);
-      }).toList();
+        data['id'] = doc.id;
+        
+        // Verificar si el post está eliminado (por defecto false si no existe el campo)
+        final isDeleted = data['isDeleted'] ?? false;
+        print('📝 Post: ${data['titulo']} - isDeleted: $isDeleted');
+        
+        if (!isDeleted) {
+          posts.add(ForumPost.fromFirestore(data));
+        }
+      }
+      
+      print('📊 Posts no eliminados: ${posts.length}');
+      return posts;
     } catch (e) {
+      print('❌ Error obteniendo posts del usuario: $e');
       throw Exception('Error obteniendo posts del usuario: $e');
     }
   }

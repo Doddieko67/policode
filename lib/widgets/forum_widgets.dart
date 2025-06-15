@@ -418,7 +418,7 @@ class _ForumReplyCardState extends State<ForumReplyCard> {
           ),
           if (widget.reply.mediaAttachments.isNotEmpty) ...[
             const SizedBox(height: 12),
-            MediaPreview(attachments: widget.reply.mediaAttachments, maxItems: 2),
+            AttachmentsList(attachments: widget.reply.mediaAttachments),
           ],
           const SizedBox(height: 12),
           Row(

@@ -85,6 +85,33 @@ class MediaService {
     }
   }
 
+  /// Seleccionar múltiples archivos multimedia (imágenes, videos y documentos)
+  Future<List<File>> pickMultipleMedia() async {
+    try {
+      final List<File> files = [];
+      
+      // Mostrar dialog de opciones
+      // Por simplicidad, vamos a usar el selector de archivos general
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'avi', 'mov', 'wmv', 'pdf', 'doc', 'docx', 'txt'],
+        allowMultiple: true,
+      );
+
+      if (result != null) {
+        for (PlatformFile file in result.files) {
+          if (file.path != null) {
+            files.add(File(file.path!));
+          }
+        }
+      }
+      
+      return files;
+    } catch (e) {
+      throw Exception('Error seleccionando archivos: $e');
+    }
+  }
+
   // ===== SUBIDA DE ARCHIVOS =====
 
   /// Subir imagen y obtener MediaAttachment
@@ -214,6 +241,41 @@ class MediaService {
     return attachments;
   }
 
+  /// Subir archivo multimedia para el foro
+  Future<MediaAttachment?> uploadForumMedia({
+    required File file,
+    required String userId,
+    required String postId,
+  }) async {
+    try {
+      final String fileName = path.basename(file.path);
+      final String extension = path.extension(fileName).toLowerCase();
+      
+      if (_isImageFile(fileName)) {
+        // Subir como imagen
+        final xFile = XFile(file.path);
+        return await uploadImage(xFile, postId);
+      } else if (_isVideoFile(fileName)) {
+        // Subir como video
+        final xFile = XFile(file.path);
+        return await uploadVideo(xFile, postId);
+      } else {
+        // Subir como documento
+        final bytes = await file.readAsBytes();
+        final platformFile = PlatformFile(
+          name: fileName,
+          size: bytes.length,
+          bytes: bytes,
+          path: file.path,
+        );
+        return await uploadDocument(platformFile, postId);
+      }
+    } catch (e) {
+      print('Error subiendo archivo multimedia: $e');
+      return null;
+    }
+  }
+
   // ===== ELIMINACIÓN DE ARCHIVOS =====
 
   /// Eliminar archivo multimedia
@@ -246,6 +308,16 @@ class MediaService {
   bool _isVideoFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
     return ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'].contains(extension);
+  }
+
+  /// Verificar si un archivo es una imagen (método público)
+  bool isImageFile(String filePath) {
+    return _isImageFile(filePath);
+  }
+
+  /// Verificar si un archivo es un video (método público)
+  bool isVideoFile(String filePath) {
+    return _isVideoFile(filePath);
   }
 
   /// Obtener la relación de aspecto de una imagen

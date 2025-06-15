@@ -215,45 +215,80 @@ class _MisPostsScreenState extends State<MisPostsScreen>
         separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final respuesta = _misRespuestas[index];
-          return Card(
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Respuesta en: ${respuesta.postTitulo ?? "Post eliminado"}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+          return GestureDetector(
+            onTap: () async {
+              // Navegar al post específico donde se hizo la respuesta
+              try {
+                final post = await _forumService.getPostById(respuesta.postId);
+                if (post != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ForumPostDetailScreen(post: post),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ForumReplyCard(
-                    reply: respuesta,
-                    onLike: () async {
-                      try {
-                        await _forumService.toggleReplyLike(
-                          respuesta.id,
-                          _authService.currentUser!.uid,
-                        );
-                        _loadMisRespuestas(_authService.currentUser!.uid);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    },
-                  ),
-                ],
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('El post ya no existe')),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error cargando post: $e')),
+                );
+              }
+            },
+            child: Card(
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Respuesta en: ${respuesta.postTitulo ?? "Post eliminado"}',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ForumReplyCard(
+                      reply: respuesta,
+                      onLike: () async {
+                        try {
+                          await _forumService.toggleReplyLike(
+                            respuesta.id,
+                            _authService.currentUser!.uid,
+                          );
+                          _loadMisRespuestas(_authService.currentUser!.uid);
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           );

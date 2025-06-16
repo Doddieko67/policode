@@ -90,6 +90,7 @@ class ForumPost extends Equatable {
   final int respuestas;
   final bool isPinned;
   final bool isClosed;
+  final bool isLocked;
   final String? categoria;
   final List<MediaAttachment> mediaAttachments;
 
@@ -106,6 +107,7 @@ class ForumPost extends Equatable {
     this.respuestas = 0,
     this.isPinned = false,
     this.isClosed = false,
+    this.isLocked = false,
     this.categoria,
     this.mediaAttachments = const [],
   });
@@ -125,6 +127,7 @@ class ForumPost extends Equatable {
       respuestas: data['respuestas'] ?? 0,
       isPinned: data['isPinned'] ?? false,
       isClosed: data['isClosed'] ?? false,
+      isLocked: data['isLocked'] ?? false,
       categoria: data['categoria'],
       mediaAttachments: (data['mediaAttachments'] as List<dynamic>?)
               ?.map((item) => MediaAttachment.fromFirestore(item as Map<String, dynamic>))
@@ -148,6 +151,7 @@ class ForumPost extends Equatable {
       'respuestas': respuestas,
       'isPinned': isPinned,
       'isClosed': isClosed,
+      'isLocked': isLocked,
       'categoria': categoria,
       'mediaAttachments': mediaAttachments.map((item) => item.toFirestore()).toList(),
     };
@@ -167,6 +171,7 @@ class ForumPost extends Equatable {
     int? respuestas,
     bool? isPinned,
     bool? isClosed,
+    bool? isLocked,
     String? categoria,
     List<MediaAttachment>? mediaAttachments,
   }) {
@@ -183,6 +188,7 @@ class ForumPost extends Equatable {
       respuestas: respuestas ?? this.respuestas,
       isPinned: isPinned ?? this.isPinned,
       isClosed: isClosed ?? this.isClosed,
+      isLocked: isLocked ?? this.isLocked,
       categoria: categoria ?? this.categoria,
       mediaAttachments: mediaAttachments ?? this.mediaAttachments,
     );
@@ -202,6 +208,7 @@ class ForumPost extends Equatable {
         respuestas,
         isPinned,
         isClosed,
+        isLocked,
         categoria,
         mediaAttachments,
       ];

@@ -535,4 +535,257 @@ class AdminService {
         .limit(limit)
         .snapshots();
   }
+
+  // === GESTIÓN DE POSTS PARA ADMIN ===
+  
+  // Obtener todos los posts para gestión admin
+  Stream<List<ForumPost>> getAllPostsForAdmin() {
+    return _firestore
+        .collection('forum_posts')
+        .orderBy('fechaCreacion', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return ForumPost.fromFirestore(data);
+      }).toList();
+    });
+  }
+
+  // Obtener posts reportados
+  Stream<List<ForumPost>> getReportedPosts() {
+    return _firestore
+        .collection('reports')
+        .where('status', isEqualTo: ReportStatus.pending.name)
+        .where('contentType', isEqualTo: 'post')
+        .snapshots()
+        .asyncMap((reportSnapshot) async {
+      final postIds = reportSnapshot.docs
+          .map((doc) => doc.data()['contentId'] as String)
+          .toSet()
+          .toList();
+
+      if (postIds.isEmpty) return <ForumPost>[];
+
+      final posts = <ForumPost>[];
+      
+      // Obtener posts en lotes de 10 (límite de Firestore)
+      for (int i = 0; i < postIds.length; i += 10) {
+        final batch = postIds.skip(i).take(10).toList();
+        final postSnapshots = await _firestore
+            .collection('forum_posts')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        
+        for (final doc in postSnapshots.docs) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            posts.add(ForumPost.fromFirestore(data));
+          }
+        }
+      }
+      
+      return posts;
+    });
+  }
+
+  // Obtener posts reportados como lista (no stream)
+  Future<List<ForumPost>> getReportedPostsList() async {
+    try {
+      final reportSnapshot = await _firestore
+          .collection('reports')
+          .where('status', isEqualTo: ReportStatus.pending.name)
+          .where('contentType', isEqualTo: 'post')
+          .get();
+
+      final postIds = reportSnapshot.docs
+          .map((doc) => doc.data()['contentId'] as String)
+          .toSet()
+          .toList();
+
+      if (postIds.isEmpty) return <ForumPost>[];
+
+      final posts = <ForumPost>[];
+      
+      // Obtener posts en lotes de 10 (límite de Firestore)
+      for (int i = 0; i < postIds.length; i += 10) {
+        final batch = postIds.skip(i).take(10).toList();
+        final postSnapshots = await _firestore
+            .collection('forum_posts')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        
+        for (final doc in postSnapshots.docs) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            posts.add(ForumPost.fromFirestore(data));
+          }
+        }
+      }
+      
+      return posts;
+    } catch (e) {
+      print('Error obteniendo posts reportados: $e');
+      return [];
+    }
+  }
+
+  // Agregar comentario oficial de admin a un post
+  Future<void> addAdminCommentToPost(String postId, String comment) async {
+    return addAdminComment(postId, comment, isPinned: false);
+  }
+
+  // Agregar comentario oficial de admin a un post
+  Future<void> addAdminComment(
+    String postId,
+    String comment,
+    {bool isPinned = false}
+  ) async {
+    try {
+      // Obtener información del post
+      final postDoc = await _firestore
+          .collection('forum_posts')
+          .doc(postId)
+          .get();
+      
+      if (!postDoc.exists) {
+        throw Exception('Post no encontrado');
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final postTitle = postData['titulo'] ?? 'Post sin título';
+
+      // Crear la respuesta como admin
+      await _firestore.collection('forum_replies').add({
+        'postId': postId,
+        'autorId': _auth.currentUser?.uid,
+        'autorNombre': 'Administrador',
+        'contenido': comment,
+        'fechaCreacion': Timestamp.now(),
+        'likes': 0,
+        'isAdminComment': true,
+        'isPinned': isPinned,
+        'attachments': [],
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: 'admin_comment',
+        contentId: postId,
+        details: 'Comentario oficial agregado al post "$postTitle"${isPinned ? ' (fijado)' : ''}',
+      );
+    } catch (e) {
+      print('Error agregando comentario de admin: $e');
+      rethrow;
+    }
+  }
+
+  // Fijar/desfijar post
+  Future<void> togglePinPost(String postId) async {
+    try {
+      final postDoc = await _firestore
+          .collection('forum_posts')
+          .doc(postId)
+          .get();
+      
+      if (!postDoc.exists) {
+        throw Exception('Post no encontrado');
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final currentlyPinned = postData['isPinned'] ?? false;
+      final postTitle = postData['titulo'] ?? 'Post sin título';
+
+      await _firestore.collection('forum_posts').doc(postId).update({
+        'isPinned': !currentlyPinned,
+        'pinnedAt': !currentlyPinned ? Timestamp.now() : null,
+        'pinnedBy': !currentlyPinned ? _auth.currentUser?.uid : null,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: currentlyPinned ? 'unpin_post' : 'pin_post',
+        contentId: postId,
+        details: 'Post "$postTitle" ${currentlyPinned ? 'desfijado' : 'fijado'}',
+      );
+    } catch (e) {
+      print('Error cambiando estado de pin del post: $e');
+      rethrow;
+    }
+  }
+
+  // Cerrar/abrir post para comentarios
+  Future<void> toggleLockPost(String postId) async {
+    try {
+      final postDoc = await _firestore
+          .collection('forum_posts')
+          .doc(postId)
+          .get();
+      
+      if (!postDoc.exists) {
+        throw Exception('Post no encontrado');
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final currentlyLocked = postData['isLocked'] ?? false;
+      final postTitle = postData['titulo'] ?? 'Post sin título';
+
+      await _firestore.collection('forum_posts').doc(postId).update({
+        'isLocked': !currentlyLocked,
+        'lockedAt': !currentlyLocked ? Timestamp.now() : null,
+        'lockedBy': !currentlyLocked ? _auth.currentUser?.uid : null,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: currentlyLocked ? 'unlock_post' : 'lock_post',
+        contentId: postId,
+        details: 'Post "$postTitle" ${currentlyLocked ? 'abierto' : 'cerrado'} para comentarios',
+      );
+    } catch (e) {
+      print('Error cambiando estado de bloqueo del post: $e');
+      rethrow;
+    }
+  }
+
+  // Obtener estadísticas de posts
+  Future<Map<String, dynamic>> getPostStats() async {
+    try {
+      final now = DateTime.now();
+      final lastWeek = now.subtract(const Duration(days: 7));
+      final lastMonth = now.subtract(const Duration(days: 30));
+
+      final results = await Future.wait([
+        // Posts totales
+        _firestore.collection('forum_posts').count().get(),
+        // Posts de la última semana
+        _firestore.collection('forum_posts')
+            .where('fechaCreacion', isGreaterThan: Timestamp.fromDate(lastWeek))
+            .count().get(),
+        // Posts del último mes
+        _firestore.collection('forum_posts')
+            .where('fechaCreacion', isGreaterThan: Timestamp.fromDate(lastMonth))
+            .count().get(),
+        // Posts fijados
+        _firestore.collection('forum_posts')
+            .where('isPinned', isEqualTo: true)
+            .count().get(),
+        // Posts cerrados
+        _firestore.collection('forum_posts')
+            .where('isLocked', isEqualTo: true)
+            .count().get(),
+      ]);
+
+      return {
+        'totalPosts': results[0].count ?? 0,
+        'postsLastWeek': results[1].count ?? 0,
+        'postsLastMonth': results[2].count ?? 0,
+        'pinnedPosts': results[3].count ?? 0,
+        'lockedPosts': results[4].count ?? 0,
+      };
+    } catch (e) {
+      print('Error obteniendo estadísticas de posts: $e');
+      return {};
+    }
+  }
 }

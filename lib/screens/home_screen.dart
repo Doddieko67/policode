@@ -10,6 +10,7 @@ import 'package:policode/widgets/loading_widgets.dart';
 import '../services/reglamento_service.dart';
 import '../services/notas_service.dart';
 import '../services/forum_service.dart';
+import '../services/notification_service.dart';
 
 /// Pantalla principal de la aplicación
 class HomeScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final ReglamentoService _reglamentoService = ReglamentoService();
   final NotasService _notasService = NotasService();
   final ForumService _forumService = ForumService();
+  final NotificationService _notificationService = NotificationService();
 
   bool _isLoading = true;
   bool _isAdmin = false;
@@ -161,6 +163,52 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
+        // Botón de notificaciones
+        if (user != null)
+          StreamBuilder<int>(
+            stream: _notificationService.getUnreadCount(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.data ?? 0;
+              
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/notifications');
+                    },
+                    tooltip: 'Avisos',
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        
         if (user != null)
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
@@ -357,6 +405,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
+              Expanded(
+                child: CustomButton(
+                  text: 'Avisos',
+                  onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                  type: ButtonType.secondary,
+                  customColor: Colors.white,
+                  icon: Icons.notifications_outlined,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
               Expanded(
                 child: CustomButton(
                   text: 'Notas',

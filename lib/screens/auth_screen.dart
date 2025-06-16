@@ -52,11 +52,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
-        _pageController.animateToPage(
-          _tabController.index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+        setState(() {}); // Actualizar para AnimatedSwitcher
         _clearError();
       }
     });
@@ -86,40 +82,57 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     final theme = Theme.of(context);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(theme),
-            _buildTabBar(theme),
-            Expanded(
-              child: Column(
-                children: [
-                  // Google Sign-In Button (común para ambas pestañas)
-                  _buildGoogleSignInSection(theme),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
 
-                  // Divider
-                  _buildDivider(theme),
+              // Header compacto
+              _buildCompactHeader(theme),
 
-                  // Contenido de las pestañas
-                  Expanded(child: _buildContent(theme)),
-                ],
+              const SizedBox(height: 24),
+
+              // Tab bar
+              _buildTabBar(theme),
+
+              const SizedBox(height: 24),
+
+              // Google Sign-In
+              _buildGoogleSignInSection(theme),
+
+              // Divider
+              _buildDivider(theme),
+
+              const SizedBox(height: 16),
+
+              // Formulario según tab activa
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _tabController.index == 0
+                    ? _buildLoginForm(theme)
+                    : _buildRegisterForm(theme),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 32), // Espacio adicional
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(32),
+  Widget _buildCompactHeader(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
       child: Column(
         children: [
-          // Logo/Icono de la app
+          // Logo original tamaño completo
           Container(
-            width: 80,
-            height: 80,
+            width: 140,
+            height: 140,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -188,7 +201,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   Widget _buildTabBar(ThemeData theme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
@@ -218,7 +231,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   Widget _buildGoogleSignInSection(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
         children: [
           // Google Sign-In Button
@@ -294,7 +307,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   Widget _buildDivider(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
           Expanded(
@@ -317,269 +330,254 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildContent(ThemeData theme) {
-    return PageView(
-      controller: _pageController,
-      onPageChanged: (index) {
-        _tabController.animateTo(index);
-        _clearError();
-      },
-      children: [_buildLoginForm(theme), _buildRegisterForm(theme)],
-    );
-  }
-
   Widget _buildLoginForm(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Form(
-        key: _loginFormKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '¡Bienvenido de vuelta!',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
+    return Form(
+      key: _loginFormKey,
+      child: Column(
+        key: const ValueKey('login'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '¡Bienvenido de vuelta!',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            'Ingresa tus credenciales para continuar',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Email
+          CustomInput.email(
+            controller: _loginEmailController,
+            focusNode: _loginEmailFocus,
+            onSubmitted: (_) => _loginPasswordFocus.requestFocus(),
+            validator: _validateEmail,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Password
+          CustomInput.password(
+            controller: _loginPasswordController,
+            focusNode: _loginPasswordFocus,
+            onSubmitted: (_) => _handleLogin(),
+            validator: _validatePassword,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Forgot password
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _showForgotPasswordDialog,
+              child: Text(
+                '¿Olvidaste tu contraseña?',
+                style: TextStyle(
+                  color: theme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 8),
+          const SizedBox(height: 24),
 
-            Text(
-              'Ingresa tus credenciales para continuar',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+          // Error message
+          if (_errorMessage != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Email
-            CustomInput.email(
-              controller: _loginEmailController,
-              focusNode: _loginEmailFocus,
-              onSubmitted: (_) => _loginPasswordFocus.requestFocus(),
-              validator: _validateEmail,
-            ),
-
-            const SizedBox(height: 20),
-
-            // Password
-            CustomInput.password(
-              controller: _loginPasswordController,
-              focusNode: _loginPasswordFocus,
-              onSubmitted: (_) => _handleLogin(),
-              validator: _validatePassword,
-            ),
-
-            const SizedBox(height: 16),
-
-            // Forgot password
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: _showForgotPasswordDialog,
-                child: Text(
-                  '¿Olvidaste tu contraseña?',
-                  style: TextStyle(
-                    color: theme.primaryColor,
-                    fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.error,
+                    size: 20,
                   ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Error message
-            if (_errorMessage != null) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: theme.colorScheme.error,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: theme.colorScheme.error,
-                          fontSize: 14,
-                        ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontSize: 14,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // Login button
-            CustomButton.primary(
-              text: 'Iniciar Sesión',
-              onPressed: (_isLoading || _isGoogleLoading) ? null : _handleLogin,
-              isLoading: _isLoading,
-              isExpanded: true,
-              size: ButtonSize.large,
             ),
+            const SizedBox(height: 16),
           ],
-        ),
+
+          // Login button
+          CustomButton.primary(
+            text: 'Iniciar Sesión',
+            onPressed: (_isLoading || _isGoogleLoading) ? null : _handleLogin,
+            isLoading: _isLoading,
+            isExpanded: true,
+            size: ButtonSize.large,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildRegisterForm(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Form(
-        key: _registerFormKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '¡Únete a PoliCode!',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
-              ),
+    return Form(
+      key: _registerFormKey,
+      child: Column(
+        key: const ValueKey('register'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '¡Únete a PoliCode!',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
             ),
+          ),
 
-            const SizedBox(height: 8),
+          const SizedBox(height: 8),
 
-            Text(
-              'Crea tu cuenta para guardar tus consultas',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
+          Text(
+            'Crea tu cuenta para guardar tus consultas',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),
+          ),
 
-            const SizedBox(height: 32),
+          const SizedBox(height: 32),
 
-            // Name
-            CustomInput(
-              label: 'Nombre completo',
-              hint: 'Ingresa tu nombre',
-              controller: _registerNameController,
-              focusNode: _registerNameFocus,
-              prefixIcon: Icons.person_outline,
-              textInputAction: TextInputAction.next,
-              onSubmitted: (_) => _registerEmailFocus.requestFocus(),
-              validator: _validateName,
-              isRequired: true,
-            ),
+          // Name
+          CustomInput(
+            label: 'Nombre completo',
+            hint: 'Ingresa tu nombre',
+            controller: _registerNameController,
+            focusNode: _registerNameFocus,
+            prefixIcon: Icons.person_outline,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _registerEmailFocus.requestFocus(),
+            validator: _validateName,
+            isRequired: true,
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            // Email
-            CustomInput.email(
-              controller: _registerEmailController,
-              focusNode: _registerEmailFocus,
-              onSubmitted: (_) => _registerPasswordFocus.requestFocus(),
-              validator: _validateEmail,
-            ),
+          // Email
+          CustomInput.email(
+            controller: _registerEmailController,
+            focusNode: _registerEmailFocus,
+            onSubmitted: (_) => _registerPasswordFocus.requestFocus(),
+            validator: _validateEmail,
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            // Password
-            CustomInput.password(
-              controller: _registerPasswordController,
-              focusNode: _registerPasswordFocus,
-              onSubmitted: (_) => _registerConfirmPasswordFocus.requestFocus(),
-              validator: _validateNewPassword,
-            ),
+          // Password
+          CustomInput.password(
+            controller: _registerPasswordController,
+            focusNode: _registerPasswordFocus,
+            onSubmitted: (_) => _registerConfirmPasswordFocus.requestFocus(),
+            validator: _validateNewPassword,
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            // Confirm Password
-            CustomInput(
-              label: 'Confirmar contraseña',
-              hint: 'Confirma tu contraseña',
-              type: InputType.password,
-              controller: _registerConfirmPasswordController,
-              focusNode: _registerConfirmPasswordFocus,
-              prefixIcon: Icons.lock_outline,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _handleRegister(),
-              validator: _validateConfirmPassword,
-              isRequired: true,
-            ),
+          // Confirm Password
+          CustomInput(
+            label: 'Confirmar contraseña',
+            hint: 'Confirma tu contraseña',
+            type: InputType.password,
+            controller: _registerConfirmPasswordController,
+            focusNode: _registerConfirmPasswordFocus,
+            prefixIcon: Icons.lock_outline,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _handleRegister(),
+            validator: _validateConfirmPassword,
+            isRequired: true,
+          ),
 
-            const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-            // Terms checkbox
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.info_outline, size: 16, color: theme.primaryColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Al registrarte, aceptas nuestros términos de servicio y política de privacidad.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
+          // Terms checkbox
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline, size: 16, color: theme.primaryColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Al registrarte, aceptas nuestros términos de servicio y política de privacidad.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
-            const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-            // Error message
-            if (_errorMessage != null) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: theme.colorScheme.error,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: theme.colorScheme.error,
-                          fontSize: 14,
-                        ),
+          // Error message
+          if (_errorMessage != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontSize: 14,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // Register button
-            CustomButton.primary(
-              text: 'Crear Cuenta',
-              onPressed: (_isLoading || _isGoogleLoading)
-                  ? null
-                  : _handleRegister,
-              isLoading: _isLoading,
-              isExpanded: true,
-              size: ButtonSize.large,
             ),
+            const SizedBox(height: 16),
           ],
-        ),
+
+          // Register button
+          CustomButton.primary(
+            text: 'Crear Cuenta',
+            onPressed: (_isLoading || _isGoogleLoading)
+                ? null
+                : _handleRegister,
+            isLoading: _isLoading,
+            isExpanded: true,
+            size: ButtonSize.large,
+          ),
+        ],
       ),
     );
   }

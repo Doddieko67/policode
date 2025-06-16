@@ -1,80 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:equatable/equatable.dart';
-
-/// Modelo para notificaciones
-class AppNotification extends Equatable {
-  final String id;
-  final String userId;
-  final String type;
-  final String title;
-  final String message;
-  final bool isRead;
-  final DateTime timestamp;
-  final Map<String, dynamic>? data;
-
-  const AppNotification({
-    required this.id,
-    required this.userId,
-    required this.type,
-    required this.title,
-    required this.message,
-    required this.isRead,
-    required this.timestamp,
-    this.data,
-  });
-
-  factory AppNotification.fromFirestore(Map<String, dynamic> data) {
-    return AppNotification(
-      id: data['id'] ?? '',
-      userId: data['userId'] ?? '',
-      type: data['type'] ?? '',
-      title: data['title'] ?? '',
-      message: data['message'] ?? '',
-      isRead: data['isRead'] ?? false,
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
-      data: data['data'] as Map<String, dynamic>?,
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'id': id,
-      'userId': userId,
-      'type': type,
-      'title': title,
-      'message': message,
-      'isRead': isRead,
-      'timestamp': Timestamp.fromDate(timestamp),
-      'data': data,
-    };
-  }
-
-  AppNotification copyWith({
-    String? id,
-    String? userId,
-    String? type,
-    String? title,
-    String? message,
-    bool? isRead,
-    DateTime? timestamp,
-    Map<String, dynamic>? data,
-  }) {
-    return AppNotification(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      type: type ?? this.type,
-      title: title ?? this.title,
-      message: message ?? this.message,
-      isRead: isRead ?? this.isRead,
-      timestamp: timestamp ?? this.timestamp,
-      data: data ?? this.data,
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, userId, type, title, message, isRead, timestamp, data];
-}
+import '../models/notification_model.dart';
 
 /// Servicio de notificaciones
 class NotificationService {
@@ -82,43 +8,75 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Obtener notificaciones del usuario actual
-  Stream<List<AppNotification>> getUserNotifications() {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return Stream.value([]);
-
-    return _db
-        .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => AppNotification.fromFirestore(doc.data()))
-            .toList());
+  /// Crear una nueva notificación
+  Future<void> createNotification(NotificationModel notification) async {
+    try {
+      await _firestore.collection('notifications').add(notification.toFirestore());
+    } catch (e) {
+      print('Error creando notificación: $e');
+      rethrow;
+    }
   }
 
-  /// Obtener notificaciones no leídas
-  Future<int> getUnreadCount() async {
+  /// Obtener notificaciones del usuario actual
+  Stream<List<NotificationModel>> getUserNotifications({
+    int limit = 50,
+    bool unreadOnly = false,
+  }) {
     final userId = _auth.currentUser?.uid;
-    if (userId == null) return 0;
+    if (userId == null) {
+      return Stream.value([]);
+    }
 
-    final snapshot = await _db
+    Query query = _firestore
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true);
+
+    if (unreadOnly) {
+      query = query.where('isRead', isEqualTo: false);
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => NotificationModel.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  /// Obtener el conteo de notificaciones no leídas
+  Stream<int> getUnreadCount() {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
         .collection('notifications')
         .where('userId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
-        .get();
-
-    return snapshot.docs.length;
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
   }
 
-  /// Marcar notificación como leída
+  /// Marcar una notificación como leída
   Future<void> markAsRead(String notificationId) async {
-    await _db.collection('notifications').doc(notificationId).update({
-      'isRead': true,
-    });
+    try {
+      await _firestore.collection('notifications').doc(notificationId).update({
+        'isRead': true,
+        'readAt': Timestamp.now(),
+      });
+    } catch (e) {
+      print('Error marcando notificación como leída: $e');
+      rethrow;
+    }
   }
 
   /// Marcar todas las notificaciones como leídas
@@ -126,91 +84,183 @@ class NotificationService {
     final userId = _auth.currentUser?.uid;
     if (userId == null) return;
 
-    final snapshot = await _db
-        .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .where('isRead', isEqualTo: false)
-        .get();
+    try {
+      final unreadNotifications = await _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false)
+          .get();
 
-    final batch = _db.batch();
-    for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {'isRead': true});
+      final batch = _firestore.batch();
+      final now = Timestamp.now();
+
+      for (final doc in unreadNotifications.docs) {
+        batch.update(doc.reference, {
+          'isRead': true,
+          'readAt': now,
+        });
+      }
+
+      await batch.commit();
+    } catch (e) {
+      print('Error marcando todas las notificaciones como leídas: $e');
+      rethrow;
     }
-    await batch.commit();
   }
 
-  /// Crear notificación de nuevo artículo
-  Future<void> createNewArticleNotification({
-    required String subscriberId,
-    required String authorId,
-    required String authorName,
-    required String articleId,
-    required String articleTitle,
-  }) async {
-    final notificationRef = _db.collection('notifications').doc();
-    await notificationRef.set({
-      'id': notificationRef.id,
-      'userId': subscriberId,
-      'type': 'new_article',
-      'title': 'Nuevo artículo',
-      'message': '$authorName publicó: "$articleTitle"',
-      'isRead': false,
-      'timestamp': FieldValue.serverTimestamp(),
-      'data': {
-        'authorId': authorId,
-        'articleId': articleId,
-        'articleTitle': articleTitle,
-      },
-    });
+  /// Eliminar una notificación
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _firestore.collection('notifications').doc(notificationId).delete();
+    } catch (e) {
+      print('Error eliminando notificación: $e');
+      rethrow;
+    }
   }
 
-  /// Crear notificación de nuevo post en foro
-  Future<void> createNewPostNotification({
-    required String subscriberId,
-    required String authorId,
-    required String authorName,
+  // === MÉTODOS PARA CREAR NOTIFICACIONES ESPECÍFICAS ===
+
+  /// Notificar nueva respuesta a post
+  Future<void> notifyPostReply({
     required String postId,
     required String postTitle,
+    required String postAuthorId,
+    required String fromUserId,
+    required String fromUserName,
   }) async {
-    final notificationRef = _db.collection('notifications').doc();
-    await notificationRef.set({
-      'id': notificationRef.id,
-      'userId': subscriberId,
-      'type': 'new_post',
-      'title': 'Nuevo post en el foro',
-      'message': '$authorName publicó: "$postTitle"',
-      'isRead': false,
-      'timestamp': FieldValue.serverTimestamp(),
-      'data': {
-        'authorId': authorId,
-        'postId': postId,
-        'postTitle': postTitle,
-      },
-    });
+    // No notificar si el autor responde a su propio post
+    if (postAuthorId == fromUserId) return;
+
+    final notification = NotificationFactory.createPostReplyNotification(
+      userId: postAuthorId,
+      postId: postId,
+      postTitle: postTitle,
+      fromUserId: fromUserId,
+      fromUserName: fromUserName,
+    );
+
+    await createNotification(notification);
   }
 
-  /// Eliminar notificación
-  Future<void> deleteNotification(String notificationId) async {
-    await _db.collection('notifications').doc(notificationId).delete();
+  /// Notificar like en post
+  Future<void> notifyPostLiked({
+    required String postId,
+    required String postTitle,
+    required String postAuthorId,
+    required String fromUserId,
+    required String fromUserName,
+  }) async {
+    // No notificar si el autor le da like a su propio post
+    if (postAuthorId == fromUserId) return;
+
+    final notification = NotificationFactory.createPostLikedNotification(
+      userId: postAuthorId,
+      postId: postId,
+      postTitle: postTitle,
+      fromUserId: fromUserId,
+      fromUserName: fromUserName,
+    );
+
+    await createNotification(notification);
   }
 
-  /// Limpiar notificaciones antiguas (más de 30 días)
-  Future<void> cleanOldNotifications() async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
+  /// Notificar comentario de administrador
+  Future<void> notifyAdminComment({
+    required String postId,
+    required String postTitle,
+    required String postAuthorId,
+    required String adminMessage,
+  }) async {
+    final notification = NotificationFactory.createAdminCommentNotification(
+      userId: postAuthorId,
+      postId: postId,
+      postTitle: postTitle,
+      adminMessage: adminMessage,
+    );
 
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-    
-    final snapshot = await _db
-        .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .where('timestamp', isLessThan: Timestamp.fromDate(thirtyDaysAgo))
-        .get();
+    await createNotification(notification);
+  }
 
-    final batch = _db.batch();
-    for (final doc in snapshot.docs) {
-      batch.delete(doc.reference);
+  /// Notificar post eliminado
+  Future<void> notifyPostDeleted({
+    required String userId,
+    required String postTitle,
+    required String reason,
+  }) async {
+    final notification = NotificationFactory.createPostDeletedNotification(
+      userId: userId,
+      postTitle: postTitle,
+      reason: reason,
+    );
+
+    await createNotification(notification);
+  }
+
+  /// Crear anuncio general para todos los usuarios activos
+  Future<void> createGeneralAnnouncement({
+    required String title,
+    required String message,
+    NotificationPriority priority = NotificationPriority.medium,
+    String? actionUrl,
+  }) async {
+    try {
+      // Obtener todos los usuarios activos
+      final activeUsers = await _firestore
+          .collection('users')
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      final batch = _firestore.batch();
+
+      for (final userDoc in activeUsers.docs) {
+        final notification = NotificationFactory.createGeneralAnnouncementNotification(
+          targetUserIds: [userDoc.id],
+          title: title,
+          message: message,
+          priority: priority,
+          actionUrl: actionUrl,
+        ).copyWith(userId: userDoc.id);
+
+        final docRef = _firestore.collection('notifications').doc();
+        batch.set(docRef, notification.toFirestore());
+      }
+
+      await batch.commit();
+    } catch (e) {
+      print('Error creando anuncio general: $e');
+      rethrow;
     }
-    await batch.commit();
+  }
+
+  /// Obtener estadísticas de notificaciones
+  Future<Map<String, int>> getNotificationStats() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return {};
+
+    try {
+      final results = await Future.wait([
+        // Total de notificaciones
+        _firestore
+            .collection('notifications')
+            .where('userId', isEqualTo: userId)
+            .count()
+            .get(),
+        // Notificaciones no leídas
+        _firestore
+            .collection('notifications')
+            .where('userId', isEqualTo: userId)
+            .where('isRead', isEqualTo: false)
+            .count()
+            .get(),
+      ]);
+
+      return {
+        'total': results[0].count ?? 0,
+        'unread': results[1].count ?? 0,
+      };
+    } catch (e) {
+      print('Error obteniendo estadísticas: $e');
+      return {};
+    }
   }
 }

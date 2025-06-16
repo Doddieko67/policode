@@ -281,6 +281,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _buildActionTile(
           context: context,
           theme: theme,
+          icon: Icons.article_outlined,
+          title: 'Gestionar Posts',
+          subtitle: 'Moderar y administrar posts del foro',
+          color: Colors.green,
+          onTap: () {
+            Navigator.pushNamed(context, '/admin/posts');
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionTile(
+          context: context,
+          theme: theme,
           icon: Icons.people_outline,
           title: 'Gestionar Usuarios',
           subtitle: 'Ver y moderar usuarios',

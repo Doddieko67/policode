@@ -240,9 +240,48 @@ class AuthService {
     }
   }
 
+  /// Verificar si un username está disponible
+  Future<bool> isUsernameAvailable(String username) async {
+    try {
+      final query = await _firestore
+          .collection('usuarios')
+          .where('username', isEqualTo: username)
+          .limit(1)
+          .get();
+      return query.docs.isEmpty;
+    } catch (e) {
+      print('Error verificando username: $e');
+      return false;
+    }
+  }
+
+  /// Generar username único basado en el nombre
+  Future<String> generateUniqueUsername(String baseName) async {
+    String baseUsername = baseName
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '')
+        .substring(0, baseName.length < 15 ? baseName.length : 15);
+    
+    if (baseUsername.isEmpty) {
+      baseUsername = 'user';
+    }
+
+    String username = baseUsername;
+    int counter = 1;
+
+    while (!await isUsernameAvailable(username)) {
+      username = '$baseUsername$counter';
+      counter++;
+      if (counter > 999) break; // Evitar bucle infinito
+    }
+
+    return username;
+  }
+
   /// Actualizar perfil del usuario
   Future<AuthResult> updateProfile({
     String? nombre,
+    String? username,
     Map<String, dynamic>? configuraciones,
   }) async {
     try {
@@ -255,6 +294,16 @@ class AuthService {
         return AuthResult.error('Usuario no válido');
       }
 
+      // Verificar que el username esté disponible si se proporciona
+      if (username != null && username.trim().isNotEmpty) {
+        final cleanUsername = username.trim();
+        if (cleanUsername != _currentUser!.username) {
+          if (!await isUsernameAvailable(cleanUsername)) {
+            return AuthResult.error('Ese nombre de usuario ya está en uso');
+          }
+        }
+      }
+
       // Actualizar en Firebase Auth si se proporciona nombre
       if (nombre != null && nombre.trim().isNotEmpty) {
         await firebaseUser.updateDisplayName(nombre);
@@ -263,6 +312,7 @@ class AuthService {
       // Actualizar en Firestore
       final usuarioActualizado = _currentUser!.copyWith(
         nombre: nombre,
+        username: username?.trim(),
         configuraciones: configuraciones,
         ultimaConexion: DateTime.now(),
       );

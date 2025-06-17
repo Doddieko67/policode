@@ -4,6 +4,7 @@ class Usuario extends Equatable {
   final String uid;
   final String email;
   final String? nombre;
+  final String? username; // Nombre de usuario único
   final DateTime fechaRegistro;
   final DateTime? ultimaConexion;
   final bool esActivo;
@@ -13,6 +14,7 @@ class Usuario extends Equatable {
     required this.uid,
     required this.email,
     this.nombre,
+    this.username,
     required this.fechaRegistro,
     this.ultimaConexion,
     this.esActivo = true,
@@ -24,12 +26,14 @@ class Usuario extends Equatable {
     String uid,
     String email, {
     String? displayName,
+    String? username,
     DateTime? fechaRegistro,
   }) {
     return Usuario(
       uid: uid,
       email: email,
       nombre: displayName,
+      username: username,
       fechaRegistro: fechaRegistro ?? DateTime.now(),
       ultimaConexion: DateTime.now(),
       configuraciones: _configuracionesPorDefecto,
@@ -42,6 +46,7 @@ class Usuario extends Equatable {
       uid: json['uid'] as String,
       email: json['email'] as String,
       nombre: json['nombre'] as String?,
+      username: json['username'] as String?,
       fechaRegistro: DateTime.parse(json['fecha_registro']),
       ultimaConexion: json['ultima_conexion'] != null
           ? DateTime.parse(json['ultima_conexion'])
@@ -57,6 +62,7 @@ class Usuario extends Equatable {
       'uid': uid,
       'email': email,
       'nombre': nombre,
+      'username': username,
       'fecha_registro': fechaRegistro.toIso8601String(),
       'ultima_conexion': ultimaConexion?.toIso8601String(),
       'es_activo': esActivo,
@@ -69,6 +75,7 @@ class Usuario extends Equatable {
     String? uid,
     String? email,
     String? nombre,
+    String? username,
     DateTime? fechaRegistro,
     DateTime? ultimaConexion,
     bool? esActivo,
@@ -78,6 +85,7 @@ class Usuario extends Equatable {
       uid: uid ?? this.uid,
       email: email ?? this.email,
       nombre: nombre ?? this.nombre,
+      username: username ?? this.username,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
       ultimaConexion: ultimaConexion ?? this.ultimaConexion,
       esActivo: esActivo ?? this.esActivo,
@@ -90,6 +98,11 @@ class Usuario extends Equatable {
   /// Nombre completo del usuario (o email como fallback)
   String get nombreCompleto {
     return nombre ?? email.split('@').first;
+  }
+
+  /// Nombre de display que prioriza username sobre nombre
+  String get displayName {
+    return username ?? nombre ?? email.split('@').first;
   }
 
   /// Iniciales del usuario para avatares
@@ -157,6 +170,7 @@ class Usuario extends Equatable {
     uid,
     email,
     nombre,
+    username,
     fechaRegistro,
     ultimaConexion,
     esActivo,

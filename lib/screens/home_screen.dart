@@ -161,45 +161,59 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
+        // Ícono de notificaciones
+        IconButton(
+          onPressed: () {
+            // TODO: Implementar pantalla de notificaciones
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Notificaciones - Próximamente'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+          icon: Stack(
+            children: [
+              const Icon(Icons.notifications_outlined),
+              // Punto rojo para indicar notificaciones pendientes
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.error,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          tooltip: 'Notificaciones',
+        ),
+        
         if (user != null)
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            icon: Container(
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/profile-settings'),
+            child: Container(
               width: 40,
               height: 40,
+              margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withOpacity(0.1),
+                color: theme.primaryColor,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   user.iniciales,
-                  style: TextStyle(
-                    color: theme.primaryColor,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.logout,
-                      size: 20,
-                      color: theme.colorScheme.error,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Cerrar Sesión',
-                      style: TextStyle(color: theme.colorScheme.error),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           )
         else
           IconButton(

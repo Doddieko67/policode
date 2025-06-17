@@ -17,6 +17,9 @@ class MediaService {
 
   /// Referencia base para archivos del foro
   Reference get _forumRef => _storage.ref().child('forum');
+  
+  /// Referencia base para fotos de perfil
+  Reference get _profileRef => _storage.ref().child('profile_photos');
 
   // ===== SELECCIÓN DE ARCHIVOS =====
 
@@ -366,5 +369,35 @@ class MediaService {
   bool isVideoUrl(String url) {
     final extension = getFileExtension(url);
     return ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'].contains(extension);
+  }
+
+  /// Subir foto de perfil
+  Future<String> uploadProfilePhoto(File imageFile, String userId) async {
+    try {
+      final String fileName = '${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final Reference ref = _profileRef.child(fileName);
+
+      // Subir archivo
+      final UploadTask uploadTask = ref.putFile(imageFile);
+      final TaskSnapshot snapshot = await uploadTask;
+      
+      // Obtener URL de descarga
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Error subiendo foto de perfil: $e');
+    }
+  }
+
+  /// Eliminar foto de perfil anterior
+  Future<void> deleteProfilePhoto(String photoUrl) async {
+    try {
+      final Reference ref = _storage.refFromURL(photoUrl);
+      await ref.delete();
+    } catch (e) {
+      // No hacer nada si el archivo no existe
+      print('No se pudo eliminar la foto anterior: $e');
+    }
   }
 }

@@ -114,14 +114,11 @@ class _ForumScreenState extends State<ForumScreen> with TickerProviderStateMixin
     return Scaffold(
       appBar: AppBar(
         title: const Text('Foro'),
-        elevation: 2,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: theme.colorScheme.onPrimary,
-          labelColor: theme.colorScheme.onPrimary,
-          unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+          labelColor: theme.colorScheme.onSurface,
+          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
           tabs: const [
             Tab(text: 'Discusiones', icon: Icon(Icons.forum)),
             Tab(text: 'Populares', icon: Icon(Icons.trending_up)),

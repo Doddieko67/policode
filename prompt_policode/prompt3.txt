@@ -1,0 +1,24 @@
+lib/services/admin_service.dart:593:27: Error: 'getReportedPosts' is already declared in this scope.
+  Future<List<ForumPost>> getReportedPosts() async {
+                          ^^^^^^^^^^^^^^^^
+lib/services/admin_service.dart:556:27: Context: Previous declaration of 'getReportedPosts'.
+  Stream<List<ForumPost>> getReportedPosts() {
+                          ^^^^^^^^^^^^^^^^
+lib/screens/admin/posts_management_screen.dart:368:27: Error: The getter 'isLocked' isn't defined for the class
+'ForumPost'.
+ - 'ForumPost' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'isLocked'.
+                    (post.isLocked ?? false) ? Icons.lock_open : Icons.lock,
+                          ^^^^^^^^
+lib/screens/admin/posts_management_screen.dart:371:37: Error: The getter 'isLocked' isn't defined for the class
+'ForumPost'.
+ - 'ForumPost' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'isLocked'.
+                  label: Text((post.isLocked ?? false) ? 'Abrir' : 'Cerrar'),
+                                    ^^^^^^^^
+lib/screens/admin/posts_management_screen.dart:514:19: Error: The getter 'isLocked' isn't defined for the class
+'ForumPost'.
+ - 'ForumPost' is from 'package:policode/models/forum_model.dart' ('lib/models/forum_model.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'isLocked'.
+            (post.isLocked ?? false) 
+                  ^^^^^^^^

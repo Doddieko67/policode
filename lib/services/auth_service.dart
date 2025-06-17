@@ -441,18 +441,34 @@ class AuthService {
           .set(usuario.toJson(), SetOptions(merge: true));
       
       // También crear/actualizar en la colección 'users' para el sistema de admin
-      await _firestore
-          .collection('users')
-          .doc(usuario.uid)
-          .set({
-            'email': usuario.email,
-            'displayName': usuario.nombre,
-            'photoURL': null, // Usuario no tiene campo de foto
-            'role': 'user', // Por defecto todos son usuarios normales
-            'status': 'active',
-            'createdAt': FieldValue.serverTimestamp(),
-            'reportCount': 0,
-          }, SetOptions(merge: true));
+      // Verificar si el usuario ya existe para no sobrescribir el rol
+      final userDoc = await _firestore.collection('users').doc(usuario.uid).get();
+      
+      if (userDoc.exists) {
+        // Usuario existe, solo actualizar campos necesarios sin tocar el rol
+        await _firestore
+            .collection('users')
+            .doc(usuario.uid)
+            .update({
+              'email': usuario.email,
+              'displayName': usuario.nombre,
+              'photoURL': null,
+            });
+      } else {
+        // Usuario nuevo, crear con rol por defecto
+        await _firestore
+            .collection('users')
+            .doc(usuario.uid)
+            .set({
+              'email': usuario.email,
+              'displayName': usuario.nombre,
+              'photoURL': null,
+              'role': 'user', // Solo establecer rol para usuarios nuevos
+              'status': 'active',
+              'createdAt': FieldValue.serverTimestamp(),
+              'reportCount': 0,
+            });
+      }
     } catch (e) {
       print('Error guardando usuario en Firestore: $e');
       rethrow;

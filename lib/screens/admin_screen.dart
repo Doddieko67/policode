@@ -47,8 +47,7 @@ class _AdminScreenState extends State<AdminScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Administración'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: LoadingWidget())

@@ -99,8 +99,7 @@ class _MisPostsScreenState extends State<MisPostsScreen>
       return Scaffold(
         appBar: AppBar(
           title: const Text('Mis Posts'),
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
+          centerTitle: true,
         ),
         body: const Center(
           child: CustomErrorWidget(
@@ -115,13 +114,11 @@ class _MisPostsScreenState extends State<MisPostsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Posts'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: theme.colorScheme.onPrimary,
-          unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
-          indicatorColor: theme.colorScheme.onPrimary,
+          labelColor: theme.colorScheme.onSurface,
+          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
           tabs: const [
             Tab(text: 'Mis Posts', icon: Icon(Icons.article)),
             Tab(text: 'Mis Respuestas', icon: Icon(Icons.reply)),

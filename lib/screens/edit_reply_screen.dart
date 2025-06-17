@@ -145,8 +145,7 @@ class _EditReplyScreenState extends State<EditReplyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Editar Respuesta'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        centerTitle: true,
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : _submitReply,

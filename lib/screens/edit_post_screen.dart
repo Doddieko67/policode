@@ -85,9 +85,6 @@ class _EditPostScreenState extends State<EditPostScreen> {
       appBar: AppBar(
         title: const Text('Editar Post'),
         centerTitle: true,
-        elevation: 2,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
         actions: [
           if (_isSubmitting)
             const Padding(

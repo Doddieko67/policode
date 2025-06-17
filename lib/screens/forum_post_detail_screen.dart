@@ -262,9 +262,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Discusión'),
-        elevation: 2,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        centerTitle: true,
         actions: [
           if (_authService.isSignedIn)
             PopupMenuButton<String>(

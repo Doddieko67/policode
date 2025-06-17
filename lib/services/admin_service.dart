@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../models/user_model.dart';
 import '../models/report_model.dart';
 import '../models/forum_model.dart';
@@ -65,6 +66,11 @@ class AdminService {
     try {
       final suspendedUntil = DateTime.now().add(duration);
       
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
       await _firestore.collection('users').doc(uid).update({
         'status': UserStatus.suspended.name,
         'suspendedUntil': Timestamp.fromDate(suspendedUntil),
@@ -75,7 +81,7 @@ class AdminService {
       await _logAdminAction(
         action: 'suspend_user',
         targetUserId: uid,
-        details: 'Suspendido hasta: ${suspendedUntil.toIso8601String()}. Razón: $reason',
+        details: 'Usuario "$userName" suspendido hasta: ${DateFormat('dd/MM/yyyy HH:mm').format(suspendedUntil)}. Duración: ${duration.inDays > 0 ? '${duration.inDays} días' : '${duration.inHours} horas'}. Razón: $reason',
       );
     } catch (e) {
       print('Error suspendiendo usuario: $e');
@@ -86,6 +92,11 @@ class AdminService {
   // Banear usuario permanentemente
   Future<void> banUser(String uid, String reason) async {
     try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
       await _firestore.collection('users').doc(uid).update({
         'status': UserStatus.banned.name,
         'suspensionReason': reason,
@@ -95,7 +106,7 @@ class AdminService {
       await _logAdminAction(
         action: 'ban_user',
         targetUserId: uid,
-        details: 'Usuario baneado permanentemente. Razón: $reason',
+        details: 'Usuario "$userName" baneado permanentemente. Razón: $reason',
       );
     } catch (e) {
       print('Error baneando usuario: $e');
@@ -106,6 +117,12 @@ class AdminService {
   // Reactivar usuario
   Future<void> reactivateUser(String uid) async {
     try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      final previousStatus = userData['status'] ?? 'desconocido';
+      
       await _firestore.collection('users').doc(uid).update({
         'status': UserStatus.active.name,
         'suspendedUntil': null,
@@ -116,7 +133,7 @@ class AdminService {
       await _logAdminAction(
         action: 'reactivate_user',
         targetUserId: uid,
-        details: 'Usuario reactivado',
+        details: 'Usuario "$userName" reactivado (estado anterior: $previousStatus)',
       );
     } catch (e) {
       print('Error reactivando usuario: $e');
@@ -276,7 +293,7 @@ class AdminService {
     List<String> tags,
   ) async {
     try {
-      await _firestore.collection('regulations').add({
+      final docRef = await _firestore.collection('regulations').add({
         'title': title,
         'content': content,
         'category': category,
@@ -289,7 +306,8 @@ class AdminService {
       // Registrar la acción
       await _logAdminAction(
         action: 'upload_regulation',
-        details: 'Nuevo reglamento: "$title"',
+        details: 'Nuevo reglamento creado: "$title" en categoría: $category. Etiquetas: ${tags.join(', ')}',
+        contentId: docRef.id,
       );
     } catch (e) {
       print('Error subiendo reglamento: $e');
@@ -303,15 +321,37 @@ class AdminService {
     Map<String, dynamic> updates,
   ) async {
     try {
+      // Obtener información del reglamento antes del cambio
+      final regDoc = await _firestore.collection('regulations').doc(regulationId).get();
+      final regData = regDoc.data() as Map<String, dynamic>? ?? {};
+      final regTitle = regData['title'] ?? 'Reglamento sin título';
+      
       await _firestore
           .collection('regulations')
           .doc(regulationId)
           .update(updates);
 
+      // Crear descripción de los cambios
+      final changesDesc = updates.entries.map((entry) {
+        switch (entry.key) {
+          case 'title':
+            return 'Título: "${entry.value}"';
+          case 'category':
+            return 'Categoría: ${entry.value}';
+          case 'isActive':
+            return entry.value ? 'Activado' : 'Desactivado';
+          case 'tags':
+            return 'Etiquetas: ${(entry.value as List).join(', ')}';
+          default:
+            return '${entry.key}: ${entry.value}';
+        }
+      }).join(', ');
+
       // Registrar la acción
       await _logAdminAction(
         action: 'update_regulation',
-        details: 'Reglamento actualizado: $regulationId',
+        details: 'Reglamento "$regTitle" actualizado. Cambios: $changesDesc',
+        contentId: regulationId,
       );
     } catch (e) {
       print('Error actualizando reglamento: $e');
@@ -322,6 +362,11 @@ class AdminService {
   // Eliminar reglamento
   Future<void> deleteRegulation(String regulationId) async {
     try {
+      // Obtener información del reglamento antes del cambio
+      final regDoc = await _firestore.collection('regulations').doc(regulationId).get();
+      final regData = regDoc.data() as Map<String, dynamic>? ?? {};
+      final regTitle = regData['title'] ?? 'Reglamento sin título';
+      
       await _firestore
           .collection('regulations')
           .doc(regulationId)
@@ -330,7 +375,8 @@ class AdminService {
       // Registrar la acción
       await _logAdminAction(
         action: 'delete_regulation',
-        details: 'Reglamento desactivado: $regulationId',
+        details: 'Reglamento "$regTitle" desactivado',
+        contentId: regulationId,
       );
     } catch (e) {
       print('Error eliminando reglamento: $e');
@@ -338,44 +384,121 @@ class AdminService {
     }
   }
 
+  // Hacer administrador
+  Future<void> makeAdmin(String uid) async {
+    try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
+      await _firestore.collection('users').doc(uid).update({
+        'role': UserRole.admin.name,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: 'make_admin',
+        targetUserId: uid,
+        details: 'Usuario "$userName" promovido a administrador',
+      );
+    } catch (e) {
+      print('Error promoviendo usuario a admin: $e');
+      rethrow;
+    }
+  }
+
+  // Remover privilegios de administrador
+  Future<void> removeAdmin(String uid) async {
+    try {
+      // Obtener información del usuario antes del cambio
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final userName = userData['displayName'] ?? userData['email'] ?? 'Usuario desconocido';
+      
+      await _firestore.collection('users').doc(uid).update({
+        'role': UserRole.user.name,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: 'remove_admin',
+        targetUserId: uid,
+        details: 'Privilegios de administrador removidos de "$userName"',
+      );
+    } catch (e) {
+      print('Error removiendo privilegios de admin: $e');
+      rethrow;
+    }
+  }
+
   // Obtener estadísticas del sistema
   Future<Map<String, dynamic>> getSystemStats() async {
     try {
-      // Usuarios totales
-      final usersCount = await _firestore
-          .collection('users')
-          .count()
-          .get()
-          .then((value) => value.count ?? 0);
+      // Ejecutar todas las consultas en paralelo para mejor performance
+      final results = await Future.wait([
+        // Usuarios totales
+        _firestore.collection('users').count().get(),
+        // Posts totales
+        _firestore.collection('forum_posts').count().get(),
+        // Respuestas totales
+        _firestore.collection('forum_replies').count().get(),
+        // Reportes pendientes
+        _firestore.collection('reports')
+            .where('status', isEqualTo: ReportStatus.pending.name)
+            .count().get(),
+        // Reportes totales
+        _firestore.collection('reports').count().get(),
+        // Usuarios suspendidos
+        _firestore.collection('users')
+            .where('status', isEqualTo: UserStatus.suspended.name)
+            .count().get(),
+        // Usuarios baneados
+        _firestore.collection('users')
+            .where('status', isEqualTo: UserStatus.banned.name)
+            .count().get(),
+        // Usuarios activos (últimos 30 días)
+        _firestore.collection('users')
+            .where('status', isEqualTo: UserStatus.active.name)
+            .count().get(),
+        // Reglamentos activos
+        _firestore.collection('regulations')
+            .where('isActive', isEqualTo: true)
+            .count().get(),
+      ]);
 
-      // Posts totales
-      final postsCount = await _firestore
+      // Estadísticas adicionales
+      final now = DateTime.now();
+      final lastWeek = now.subtract(const Duration(days: 7));
+      final lastMonth = now.subtract(const Duration(days: 30));
+
+      // Posts de la última semana
+      final recentPosts = await _firestore
           .collection('forum_posts')
+          .where('fechaCreacion', isGreaterThan: Timestamp.fromDate(lastWeek))
           .count()
-          .get()
-          .then((value) => value.count ?? 0);
+          .get();
 
-      // Reportes pendientes
-      final pendingReports = await _firestore
+      // Reportes de la última semana
+      final recentReports = await _firestore
           .collection('reports')
-          .where('status', isEqualTo: ReportStatus.pending.name)
+          .where('createdAt', isGreaterThan: Timestamp.fromDate(lastWeek))
           .count()
-          .get()
-          .then((value) => value.count ?? 0);
-
-      // Usuarios suspendidos
-      final suspendedUsers = await _firestore
-          .collection('users')
-          .where('status', isEqualTo: UserStatus.suspended.name)
-          .count()
-          .get()
-          .then((value) => value.count ?? 0);
+          .get();
 
       return {
-        'totalUsers': usersCount,
-        'totalPosts': postsCount,
-        'pendingReports': pendingReports,
-        'suspendedUsers': suspendedUsers,
+        'totalUsers': results[0].count ?? 0,
+        'totalPosts': results[1].count ?? 0,
+        'totalReplies': results[2].count ?? 0,
+        'pendingReports': results[3].count ?? 0,
+        'totalReports': results[4].count ?? 0,
+        'suspendedUsers': results[5].count ?? 0,
+        'bannedUsers': results[6].count ?? 0,
+        'activeUsers': results[7].count ?? 0,
+        'activeRegulations': results[8].count ?? 0,
+        'recentPosts': recentPosts.count ?? 0,
+        'recentReports': recentReports.count ?? 0,
+        'lastUpdated': DateTime.now().toIso8601String(),
       };
     } catch (e) {
       print('Error obteniendo estadísticas: $e');
@@ -411,5 +534,258 @@ class AdminService {
         .orderBy('timestamp', descending: true)
         .limit(limit)
         .snapshots();
+  }
+
+  // === GESTIÓN DE POSTS PARA ADMIN ===
+  
+  // Obtener todos los posts para gestión admin
+  Stream<List<ForumPost>> getAllPostsForAdmin() {
+    return _firestore
+        .collection('forum_posts')
+        .orderBy('fechaCreacion', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return ForumPost.fromFirestore(data);
+      }).toList();
+    });
+  }
+
+  // Obtener posts reportados
+  Stream<List<ForumPost>> getReportedPosts() {
+    return _firestore
+        .collection('reports')
+        .where('status', isEqualTo: ReportStatus.pending.name)
+        .where('contentType', isEqualTo: 'post')
+        .snapshots()
+        .asyncMap((reportSnapshot) async {
+      final postIds = reportSnapshot.docs
+          .map((doc) => doc.data()['contentId'] as String)
+          .toSet()
+          .toList();
+
+      if (postIds.isEmpty) return <ForumPost>[];
+
+      final posts = <ForumPost>[];
+      
+      // Obtener posts en lotes de 10 (límite de Firestore)
+      for (int i = 0; i < postIds.length; i += 10) {
+        final batch = postIds.skip(i).take(10).toList();
+        final postSnapshots = await _firestore
+            .collection('forum_posts')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        
+        for (final doc in postSnapshots.docs) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            posts.add(ForumPost.fromFirestore(data));
+          }
+        }
+      }
+      
+      return posts;
+    });
+  }
+
+  // Obtener posts reportados como lista (no stream)
+  Future<List<ForumPost>> getReportedPostsList() async {
+    try {
+      final reportSnapshot = await _firestore
+          .collection('reports')
+          .where('status', isEqualTo: ReportStatus.pending.name)
+          .where('contentType', isEqualTo: 'post')
+          .get();
+
+      final postIds = reportSnapshot.docs
+          .map((doc) => doc.data()['contentId'] as String)
+          .toSet()
+          .toList();
+
+      if (postIds.isEmpty) return <ForumPost>[];
+
+      final posts = <ForumPost>[];
+      
+      // Obtener posts en lotes de 10 (límite de Firestore)
+      for (int i = 0; i < postIds.length; i += 10) {
+        final batch = postIds.skip(i).take(10).toList();
+        final postSnapshots = await _firestore
+            .collection('forum_posts')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        
+        for (final doc in postSnapshots.docs) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            posts.add(ForumPost.fromFirestore(data));
+          }
+        }
+      }
+      
+      return posts;
+    } catch (e) {
+      print('Error obteniendo posts reportados: $e');
+      return [];
+    }
+  }
+
+  // Agregar comentario oficial de admin a un post
+  Future<void> addAdminCommentToPost(String postId, String comment) async {
+    return addAdminComment(postId, comment, isPinned: false);
+  }
+
+  // Agregar comentario oficial de admin a un post
+  Future<void> addAdminComment(
+    String postId,
+    String comment,
+    {bool isPinned = false}
+  ) async {
+    try {
+      // Obtener información del post
+      final postDoc = await _firestore
+          .collection('forum_posts')
+          .doc(postId)
+          .get();
+      
+      if (!postDoc.exists) {
+        throw Exception('Post no encontrado');
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final postTitle = postData['titulo'] ?? 'Post sin título';
+
+      // Crear la respuesta como admin
+      await _firestore.collection('forum_replies').add({
+        'postId': postId,
+        'autorId': _auth.currentUser?.uid,
+        'autorNombre': 'Administrador',
+        'contenido': comment,
+        'fechaCreacion': Timestamp.now(),
+        'likes': 0,
+        'isAdminComment': true,
+        'isPinned': isPinned,
+        'attachments': [],
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: 'admin_comment',
+        contentId: postId,
+        details: 'Comentario oficial agregado al post "$postTitle"${isPinned ? ' (fijado)' : ''}',
+      );
+    } catch (e) {
+      print('Error agregando comentario de admin: $e');
+      rethrow;
+    }
+  }
+
+  // Fijar/desfijar post
+  Future<void> togglePinPost(String postId) async {
+    try {
+      final postDoc = await _firestore
+          .collection('forum_posts')
+          .doc(postId)
+          .get();
+      
+      if (!postDoc.exists) {
+        throw Exception('Post no encontrado');
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final currentlyPinned = postData['isPinned'] ?? false;
+      final postTitle = postData['titulo'] ?? 'Post sin título';
+
+      await _firestore.collection('forum_posts').doc(postId).update({
+        'isPinned': !currentlyPinned,
+        'pinnedAt': !currentlyPinned ? Timestamp.now() : null,
+        'pinnedBy': !currentlyPinned ? _auth.currentUser?.uid : null,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: currentlyPinned ? 'unpin_post' : 'pin_post',
+        contentId: postId,
+        details: 'Post "$postTitle" ${currentlyPinned ? 'desfijado' : 'fijado'}',
+      );
+    } catch (e) {
+      print('Error cambiando estado de pin del post: $e');
+      rethrow;
+    }
+  }
+
+  // Cerrar/abrir post para comentarios
+  Future<void> toggleLockPost(String postId) async {
+    try {
+      final postDoc = await _firestore
+          .collection('forum_posts')
+          .doc(postId)
+          .get();
+      
+      if (!postDoc.exists) {
+        throw Exception('Post no encontrado');
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final currentlyLocked = postData['isLocked'] ?? false;
+      final postTitle = postData['titulo'] ?? 'Post sin título';
+
+      await _firestore.collection('forum_posts').doc(postId).update({
+        'isLocked': !currentlyLocked,
+        'lockedAt': !currentlyLocked ? Timestamp.now() : null,
+        'lockedBy': !currentlyLocked ? _auth.currentUser?.uid : null,
+      });
+
+      // Registrar la acción
+      await _logAdminAction(
+        action: currentlyLocked ? 'unlock_post' : 'lock_post',
+        contentId: postId,
+        details: 'Post "$postTitle" ${currentlyLocked ? 'abierto' : 'cerrado'} para comentarios',
+      );
+    } catch (e) {
+      print('Error cambiando estado de bloqueo del post: $e');
+      rethrow;
+    }
+  }
+
+  // Obtener estadísticas de posts
+  Future<Map<String, dynamic>> getPostStats() async {
+    try {
+      final now = DateTime.now();
+      final lastWeek = now.subtract(const Duration(days: 7));
+      final lastMonth = now.subtract(const Duration(days: 30));
+
+      final results = await Future.wait([
+        // Posts totales
+        _firestore.collection('forum_posts').count().get(),
+        // Posts de la última semana
+        _firestore.collection('forum_posts')
+            .where('fechaCreacion', isGreaterThan: Timestamp.fromDate(lastWeek))
+            .count().get(),
+        // Posts del último mes
+        _firestore.collection('forum_posts')
+            .where('fechaCreacion', isGreaterThan: Timestamp.fromDate(lastMonth))
+            .count().get(),
+        // Posts fijados
+        _firestore.collection('forum_posts')
+            .where('isPinned', isEqualTo: true)
+            .count().get(),
+        // Posts cerrados
+        _firestore.collection('forum_posts')
+            .where('isLocked', isEqualTo: true)
+            .count().get(),
+      ]);
+
+      return {
+        'totalPosts': results[0].count ?? 0,
+        'postsLastWeek': results[1].count ?? 0,
+        'postsLastMonth': results[2].count ?? 0,
+        'pinnedPosts': results[3].count ?? 0,
+        'lockedPosts': results[4].count ?? 0,
+      };
+    } catch (e) {
+      print('Error obteniendo estadísticas de posts: $e');
+      return {};
+    }
   }
 }

@@ -92,14 +92,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       crossAxisCount: 2,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      itemCount: 4,
+      itemCount: 8,
       itemBuilder: (context, index) {
         switch (index) {
           case 0:
             return _buildStatCard(
               theme: theme,
-              title: 'Usuarios Totales',
-              value: _stats['totalUsers']?.toString() ?? '0',
+              title: 'Usuarios Activos',
+              value: _stats['activeUsers']?.toString() ?? '0',
               icon: Icons.people,
               color: Colors.blue,
             );
@@ -127,6 +127,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               value: _stats['suspendedUsers']?.toString() ?? '0',
               icon: Icons.block,
               color: Colors.red,
+              highlight: (_stats['suspendedUsers'] ?? 0) > 0,
+            );
+          case 4:
+            return _buildStatCard(
+              theme: theme,
+              title: 'Respuestas',
+              value: _stats['totalReplies']?.toString() ?? '0',
+              icon: Icons.comment,
+              color: Colors.teal,
+            );
+          case 5:
+            return _buildStatCard(
+              theme: theme,
+              title: 'Posts Recientes',
+              value: _stats['recentPosts']?.toString() ?? '0',
+              icon: Icons.trending_up,
+              color: Colors.purple,
+            );
+          case 6:
+            return _buildStatCard(
+              theme: theme,
+              title: 'Reglamentos',
+              value: _stats['activeRegulations']?.toString() ?? '0',
+              icon: Icons.gavel,
+              color: Colors.indigo,
+            );
+          case 7:
+            return _buildStatCard(
+              theme: theme,
+              title: 'Usuarios Baneados',
+              value: _stats['bannedUsers']?.toString() ?? '0',
+              icon: Icons.dangerous,
+              color: Colors.red[800]!,
+              highlight: (_stats['bannedUsers'] ?? 0) > 0,
             );
           default:
             return const SizedBox();
@@ -247,6 +281,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _buildActionTile(
           context: context,
           theme: theme,
+          icon: Icons.article_outlined,
+          title: 'Gestionar Posts',
+          subtitle: 'Moderar y administrar posts del foro',
+          color: Colors.green,
+          onTap: () {
+            Navigator.pushNamed(context, '/admin/posts');
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionTile(
+          context: context,
+          theme: theme,
           icon: Icons.people_outline,
           title: 'Gestionar Usuarios',
           subtitle: 'Ver y moderar usuarios',
@@ -265,6 +311,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           color: Colors.grey,
           onTap: () {
             Navigator.pushNamed(context, '/admin/logs');
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionTile(
+          context: context,
+          theme: theme,
+          icon: Icons.cloud_sync,
+          title: 'Migración de Datos',
+          subtitle: 'Migrar reglamentos a Firebase',
+          color: Colors.teal,
+          onTap: () {
+            Navigator.pushNamed(context, '/admin/migration');
           },
         ),
       ],

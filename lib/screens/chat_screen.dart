@@ -304,9 +304,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   PreferredSizeWidget _buildAppBar(ThemeData theme) {
     return AppBar(
-      elevation: 1,
-      backgroundColor: theme.colorScheme.surface,
-      shadowColor: Colors.black.withOpacity(0.1),
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.arrow_back),

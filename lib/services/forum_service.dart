@@ -50,6 +50,20 @@ class ForumService {
     }
   }
 
+  /// Obtener todos los posts (para administradores)
+  Future<List<ForumPost>> getAllPosts() async {
+    try {
+      final snapshot = await _postsCollection
+          .orderBy('fechaCreacion', descending: true)
+          .get();
+      return snapshot.docs
+          .map((doc) => ForumPost.fromFirestore(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Error obteniendo todos los posts: $e');
+    }
+  }
+
   /// Obtener un post específico por ID
   Future<ForumPost?> getPost(String postId) async {
     try {

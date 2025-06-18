@@ -83,6 +83,7 @@ class ForumPost extends Equatable {
   final String contenido;
   final String autorId;
   final String autorNombre;
+  final String? autorPhotoURL;
   final DateTime fechaCreacion;
   final DateTime fechaActualizacion;
   final List<String> tags;
@@ -100,6 +101,7 @@ class ForumPost extends Equatable {
     required this.contenido,
     required this.autorId,
     required this.autorNombre,
+    this.autorPhotoURL,
     required this.fechaCreacion,
     required this.fechaActualizacion,
     this.tags = const [],
@@ -120,6 +122,7 @@ class ForumPost extends Equatable {
       contenido: data['contenido'] ?? '',
       autorId: data['autorId'] ?? '',
       autorNombre: data['autorNombre'] ?? '',
+      autorPhotoURL: data['autorPhotoURL'],
       fechaCreacion: (data['fechaCreacion'] as Timestamp).toDate(),
       fechaActualizacion: (data['fechaActualizacion'] as Timestamp).toDate(),
       tags: List<String>.from(data['tags'] ?? []),
@@ -144,6 +147,7 @@ class ForumPost extends Equatable {
       'contenido': contenido,
       'autorId': autorId,
       'autorNombre': autorNombre,
+      'autorPhotoURL': autorPhotoURL,
       'fechaCreacion': Timestamp.fromDate(fechaCreacion),
       'fechaActualizacion': Timestamp.fromDate(fechaActualizacion),
       'tags': tags,
@@ -164,6 +168,7 @@ class ForumPost extends Equatable {
     String? contenido,
     String? autorId,
     String? autorNombre,
+    String? autorPhotoURL,
     DateTime? fechaCreacion,
     DateTime? fechaActualizacion,
     List<String>? tags,
@@ -181,6 +186,7 @@ class ForumPost extends Equatable {
       contenido: contenido ?? this.contenido,
       autorId: autorId ?? this.autorId,
       autorNombre: autorNombre ?? this.autorNombre,
+      autorPhotoURL: autorPhotoURL ?? this.autorPhotoURL,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
       tags: tags ?? this.tags,
@@ -201,6 +207,7 @@ class ForumPost extends Equatable {
         contenido,
         autorId,
         autorNombre,
+        autorPhotoURL,
         fechaCreacion,
         fechaActualizacion,
         tags,
@@ -221,6 +228,7 @@ class ForumReply extends Equatable {
   final String contenido;
   final String autorId;
   final String autorNombre;
+  final String? autorPhotoURL;
   final DateTime fechaCreacion;
   final DateTime fechaActualizacion;
   final int likes;
@@ -235,6 +243,7 @@ class ForumReply extends Equatable {
     required this.contenido,
     required this.autorId,
     required this.autorNombre,
+    this.autorPhotoURL,
     required this.fechaCreacion,
     required this.fechaActualizacion,
     this.likes = 0,
@@ -252,6 +261,7 @@ class ForumReply extends Equatable {
       contenido: data['contenido'] ?? '',
       autorId: data['autorId'] ?? '',
       autorNombre: data['autorNombre'] ?? '',
+      autorPhotoURL: data['autorPhotoURL'],
       fechaCreacion: (data['fechaCreacion'] as Timestamp).toDate(),
       fechaActualizacion: (data['fechaActualizacion'] as Timestamp).toDate(),
       likes: data['likes'] ?? 0,
@@ -272,6 +282,7 @@ class ForumReply extends Equatable {
       'contenido': contenido,
       'autorId': autorId,
       'autorNombre': autorNombre,
+      'autorPhotoURL': autorPhotoURL,
       'fechaCreacion': Timestamp.fromDate(fechaCreacion),
       'fechaActualizacion': Timestamp.fromDate(fechaActualizacion),
       'likes': likes,
@@ -288,6 +299,7 @@ class ForumReply extends Equatable {
     String? contenido,
     String? autorId,
     String? autorNombre,
+    String? autorPhotoURL,
     DateTime? fechaCreacion,
     DateTime? fechaActualizacion,
     int? likes,
@@ -302,6 +314,7 @@ class ForumReply extends Equatable {
       contenido: contenido ?? this.contenido,
       autorId: autorId ?? this.autorId,
       autorNombre: autorNombre ?? this.autorNombre,
+      autorPhotoURL: autorPhotoURL ?? this.autorPhotoURL,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
       likes: likes ?? this.likes,
@@ -319,6 +332,7 @@ class ForumReply extends Equatable {
         contenido,
         autorId,
         autorNombre,
+        autorPhotoURL,
         fechaCreacion,
         fechaActualizacion,
         likes,

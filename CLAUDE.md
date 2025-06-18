@@ -28,13 +28,16 @@
 - `admin/regulations_management_screen.dart` - Gestión de reglamentos
 
 ### Servicios Principales
-- `forum_service.dart` - **ACTUALIZADO** con métodos para IA
+- `forum_service.dart` - **ACTUALIZADO** con métodos para IA y notificaciones
 - `media_service.dart` - **ACTUALIZADO** con métodos multimedia
 - `chatbot_service.dart` - **ACTUALIZADO** con contexto de posts
 - `flutter_gemini_service.dart` - **ACTUALIZADO** con prompts combinados
-- `auth_service.dart` - **ACTUALIZADO** con soporte para roles de usuario
+- `auth_service.dart` - **ACTUALIZADO** con soporte para roles y OneSignal
 - `admin_service.dart` - **NUEVO** Gestión de administración
 - `reglamento_service.dart` - Gestión del reglamento
+- `push_notification_service.dart` - **NUEVO** FCM como respaldo
+- `onesignal_service.dart` - **NUEVO** Servicio principal de notificaciones
+- `notification_service.dart` - Gestión de notificaciones en BD
 
 ### Widgets Principales
 - `forum_widgets.dart` - **ACTUALIZADO** con botón de reporte
@@ -46,6 +49,28 @@
 - `loading_widgets.dart` - Estados de carga
 
 ## Últimas Funcionalidades Implementadas
+
+### 7. Sistema de Notificaciones Push con Firebase
+**Estado**: ✅ COMPLETADO - ÚLTIMA IMPLEMENTACIÓN
+- **Servicios implementados**:
+  - `PushNotificationService` - FCM directo (principal)
+  - `NotificationService` - Gestión en base de datos
+  - `Cloud Functions` - Trigger automático (opcional)
+- **Integración completa**:
+  - Notificaciones automáticas en likes de posts
+  - Notificaciones automáticas en respuestas a posts
+  - Sistema directo (ForumService → FCM)
+  - Historial completo en Firestore
+- **Gestión avanzada**:
+  - Tokens FCM multi-dispositivo
+  - Limpieza automática de tokens inválidos
+  - Badge count con notificaciones no leídas
+  - Navegación automática desde notificaciones
+- **UX integrada**:
+  - Pantalla de notificaciones nativa
+  - Botón debug para ver token FCM
+  - Logs detallados para troubleshooting
+  - Sin dependencias externas
 
 ### 6. Panel de Administración Completo
 **Estado**: ✅ COMPLETADO - ÚLTIMA IMPLEMENTACIÓN
@@ -144,16 +169,24 @@ flutter analyze  # Verificar errores
    - Subida y edición de reglamentos
    - Acciones de suspensión/baneo
    - Protección con AdminGuard
+8. **Sistema de Notificaciones Push** completo con:
+   - Firebase Cloud Messaging (FCM) como servicio principal
+   - Cloud Functions como alternativa opcional
+   - Notificaciones automáticas en likes y respuestas
+   - Gestión automática de tokens FCM
+   - Historial completo en base de datos
+   - Sistema de limpieza de tokens inválidos
 
 ### 🔄 En Progreso
 - Ninguna tarea pendiente específica
 
 ### 📋 Posibles Mejoras Futuras
-1. Notificaciones push
-2. Sistema de moderación avanzado
-3. Búsqueda avanzada en el foro
-4. Estadísticas de usuario
-5. Modo offline
+1. Sistema de moderación avanzado
+2. Búsqueda avanzada en el foro
+3. Estadísticas de usuario
+4. Modo offline
+5. Notificaciones programadas
+6. Segmentación de notificaciones por categorías
 
 ## Configuración Importante
 
@@ -174,6 +207,15 @@ flutter analyze  # Verificar errores
 - API Key en `.env`
 - Modelo: `gemini-2.0-flash`
 - Contexto combinado: reglamento + posts
+
+### Notificaciones Push
+- **Firebase FCM**: Servicio principal
+- **Cloud Functions**: Triggers automáticos (opcional)
+- **Configuración**: Automática via `google-services.json`
+- **Collections**: 
+  - `notifications` - Historial completo
+  - `users` - Tokens FCM en campo `fcmTokens`
+- **Documentación**: Ver `FIREBASE_FUNCTIONS_NOTIFICATIONS.md`
 
 ### Rutas Principales
 ```dart

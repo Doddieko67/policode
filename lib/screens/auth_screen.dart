@@ -641,9 +641,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       final result = await _authService.signInWithGoogle();
 
       if (result.success) {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        _navigateAfterAuth();
       } else {
         setState(() {
           _errorMessage = result.error;
@@ -677,9 +675,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       );
 
       if (result.success) {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        _navigateAfterAuth();
       } else {
         setState(() {
           _errorMessage = result.error;
@@ -714,9 +710,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       );
 
       if (result.success) {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        _navigateAfterAuth();
       } else {
         setState(() {
           _errorMessage = result.error;
@@ -732,6 +726,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void _navigateAfterAuth() {
+    if (!mounted) return;
+    
+    // Verificar si el usuario necesita configurar su username
+    final user = _authService.currentUser;
+    if (user != null && !user.perfilCompleto) {
+      Navigator.pushReplacementNamed(context, '/username-setup');
+    } else {
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 

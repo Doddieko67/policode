@@ -5,6 +5,7 @@ class Usuario extends Equatable {
   final String email;
   final String? nombre;
   final String? username; // Nombre de usuario único
+  final String? photoURL; // URL de la foto de perfil
   final DateTime fechaRegistro;
   final DateTime? ultimaConexion;
   final bool esActivo;
@@ -15,6 +16,7 @@ class Usuario extends Equatable {
     required this.email,
     this.nombre,
     this.username,
+    this.photoURL,
     required this.fechaRegistro,
     this.ultimaConexion,
     this.esActivo = true,
@@ -27,6 +29,7 @@ class Usuario extends Equatable {
     String email, {
     String? displayName,
     String? username,
+    String? photoURL,
     DateTime? fechaRegistro,
   }) {
     return Usuario(
@@ -34,6 +37,7 @@ class Usuario extends Equatable {
       email: email,
       nombre: displayName,
       username: username,
+      photoURL: photoURL,
       fechaRegistro: fechaRegistro ?? DateTime.now(),
       ultimaConexion: DateTime.now(),
       configuraciones: _configuracionesPorDefecto,
@@ -47,6 +51,7 @@ class Usuario extends Equatable {
       email: json['email'] as String,
       nombre: json['nombre'] as String?,
       username: json['username'] as String?,
+      photoURL: json['photoURL'] as String?,
       fechaRegistro: DateTime.parse(json['fecha_registro']),
       ultimaConexion: json['ultima_conexion'] != null
           ? DateTime.parse(json['ultima_conexion'])
@@ -63,6 +68,7 @@ class Usuario extends Equatable {
       'email': email,
       'nombre': nombre,
       'username': username,
+      'photoURL': photoURL,
       'fecha_registro': fechaRegistro.toIso8601String(),
       'ultima_conexion': ultimaConexion?.toIso8601String(),
       'es_activo': esActivo,
@@ -76,6 +82,7 @@ class Usuario extends Equatable {
     String? email,
     String? nombre,
     String? username,
+    String? photoURL,
     DateTime? fechaRegistro,
     DateTime? ultimaConexion,
     bool? esActivo,
@@ -86,6 +93,7 @@ class Usuario extends Equatable {
       email: email ?? this.email,
       nombre: nombre ?? this.nombre,
       username: username ?? this.username,
+      photoURL: photoURL ?? this.photoURL,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
       ultimaConexion: ultimaConexion ?? this.ultimaConexion,
       esActivo: esActivo ?? this.esActivo,
@@ -100,9 +108,14 @@ class Usuario extends Equatable {
     return nombre ?? email.split('@').first;
   }
 
-  /// Nombre de display que prioriza username sobre nombre
+  /// Nombre de display que usa username como principal
   String get displayName {
-    return username ?? nombre ?? email.split('@').first;
+    return username ?? email.split('@').first;
+  }
+
+  /// Nombre de usuario para mostrar en la UI (username o fallback a email)
+  String get userName {
+    return username ?? email.split('@').first;
   }
 
   /// Iniciales del usuario para avatares
@@ -118,7 +131,7 @@ class Usuario extends Equatable {
 
   /// Verificar si el perfil está completo
   bool get perfilCompleto {
-    return nombre != null && nombre!.trim().isNotEmpty;
+    return username != null && username!.trim().isNotEmpty;
   }
 
   /// Tiempo desde la última conexión
@@ -171,6 +184,7 @@ class Usuario extends Equatable {
     email,
     nombre,
     username,
+    photoURL,
     fechaRegistro,
     ultimaConexion,
     esActivo,

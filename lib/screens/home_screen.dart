@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:policode/models/nota_model.dart'; // <<< 1. IMPORTAR MODELO
 import 'package:policode/services/auth_service.dart';
 import 'package:policode/services/admin_service.dart';
 import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/custom_cards.dart';
+import 'package:policode/widgets/fcm_debug_widget.dart';
 // import 'package:policode/widgets/custom_cards.dart'; // Ya no se necesita si NotaCard está separada
 import 'package:policode/widgets/loading_widgets.dart';
 // import '../services/auth_service.dart';
@@ -148,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            user != null ? '¡Hola, ${user.nombre ?? "Usuario"}!' : '¡Hola!',
+            user != null ? '¡Hola, ${user.userName}!' : '¡Hola!',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
@@ -219,16 +221,24 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: theme.primaryColor,
                 shape: BoxShape.circle,
+                image: user.configuraciones?['selectedAvatar'] != null
+                    ? DecorationImage(
+                        image: AssetImage(user.configuraciones!['selectedAvatar']),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: Center(
-                child: Text(
-                  user.iniciales,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              child: user.configuraciones?['selectedAvatar'] == null
+                  ? Center(
+                      child: Text(
+                        user.iniciales,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           )
         else
@@ -274,6 +284,12 @@ class _HomeScreenState extends State<HomeScreen> {
             // Opcional: Si quieres mostrar un mensaje si no hay notas
             else if (_authService.isSignedIn)
               _buildNoRecentNotes(),
+            
+            // Widget de debug para mostrar FCM token (solo en modo debug)
+            if (kDebugMode && _authService.isSignedIn) ...[
+              const SizedBox(height: 24),
+              const FCMDebugWidget(),
+            ],
           ],
         ),
       ),
@@ -387,21 +403,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: CustomButton(
-                  text: 'Avisos',
-                  onPressed: () => Navigator.pushNamed(context, '/notifications'),
-                  type: ButtonType.secondary,
-                  customColor: Colors.white,
-                  icon: Icons.notifications_outlined,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
               Expanded(
                 child: CustomButton(
                   text: 'Notas',

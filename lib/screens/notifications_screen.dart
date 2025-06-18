@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../widgets/loading_widgets.dart';
+import 'forum_post_detail_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -424,15 +425,46 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       _notificationService.markAsRead(notification.id);
     }
 
-    // Navegar si tiene actionUrl
-    if (notification.actionUrl != null) {
-      if (notification.postId != null) {
-        Navigator.pushNamed(
+    // Navegar según el tipo de notificación
+    if (notification.postId != null && notification.postId!.isNotEmpty) {
+      // Importar ForumPostDetailScreen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ForumPostDetailScreen.fromId(postId: notification.postId!),
+        ),
+      );
+    } else if (notification.actionUrl != null && notification.actionUrl!.isNotEmpty) {
+      // Para otras URLs que puedan existir en el futuro
+      _navigateToUrl(notification.actionUrl!);
+    } else {
+      // Si no hay navegación específica, mostrar mensaje
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta notificación no tiene acción asociada'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _navigateToUrl(String url) {
+    // Manejar diferentes tipos de URLs
+    if (url.contains('/forum-post-detail')) {
+      // Extraer postId de la URL
+      final uri = Uri.parse(url);
+      final postId = uri.queryParameters['postId'];
+      if (postId != null) {
+        Navigator.push(
           context,
-          '/forum-post-detail',
-          arguments: {'postId': notification.postId},
+          MaterialPageRoute(
+            builder: (context) => ForumPostDetailScreen.fromId(postId: postId),
+          ),
         );
       }
+    } else {
+      // Para futuras implementaciones de otras URLs
+      print('Navegando a URL no soportada: $url');
     }
   }
 

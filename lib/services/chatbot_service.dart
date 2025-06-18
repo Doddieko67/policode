@@ -91,7 +91,7 @@ class ChatbotService {
         userQuestion: mensajeUsuario,
         reglamentoContext: contextoReglamento,
         forumContext: contextoForo,
-        userName: usuario?.nombre,
+        userName: usuario?.userName,
       );
 
       if (!geminiResponse.success || geminiResponse.content == null) {
@@ -147,7 +147,7 @@ class ChatbotService {
 
   /// Generar mensaje de bienvenida personalizado
   ChatMessage generarMensajeBienvenida({Usuario? usuario}) {
-    return ChatMessage.bienvenida(nombreUsuario: usuario?.nombre);
+    return ChatMessage.bienvenida(nombreUsuario: usuario?.userName);
   }
 
   /// Procesar comandos especiales (sin cambios en la lógica)

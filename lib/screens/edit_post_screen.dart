@@ -690,6 +690,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
         contenido: _contentController.text.trim(),
         autorId: widget.post.autorId,
         autorNombre: widget.post.autorNombre,
+        autorPhotoURL: widget.post.autorPhotoURL,
         fechaCreacion: widget.post.fechaCreacion,
         fechaActualizacion: DateTime.now(),
         categoria: _selectedCategory ?? 'General',

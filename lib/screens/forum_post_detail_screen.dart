@@ -7,6 +7,7 @@ import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/loading_widgets.dart';
 import 'package:policode/widgets/forum_widgets.dart';
 import 'package:policode/widgets/media_widgets.dart';
+import 'package:policode/widgets/user_avatar.dart';
 import 'package:policode/screens/edit_post_screen.dart';
 import 'package:policode/screens/edit_reply_screen.dart';
 import 'package:intl/intl.dart';
@@ -14,12 +15,19 @@ import 'dart:io';
 
 /// Pantalla de detalle de un post del foro
 class ForumPostDetailScreen extends StatefulWidget {
-  final ForumPost post;
+  final ForumPost? post;
+  final String? postId;
 
   const ForumPostDetailScreen({
     super.key,
     required this.post,
-  });
+  }) : postId = null;
+
+  // Constructor con nombre para cargar por ID
+  const ForumPostDetailScreen.fromId({
+    super.key,
+    required this.postId,
+  }) : post = null;
 
   @override
   State<ForumPostDetailScreen> createState() => _ForumPostDetailScreenState();
@@ -36,16 +44,68 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
   List<MediaAttachment> _uploadedMedia = [];
   bool _isLoading = true;
   bool _isSubmittingReply = false;
-  late ForumPost _currentPost;
+  ForumPost? _currentPost;
   bool? _hasUserLiked;
   Map<String, bool> _replyLikes = {}; // Track reply likes locally
 
   @override
   void initState() {
     super.initState();
-    _currentPost = widget.post;
-    _loadReplies();
-    _loadLikeStatus();
+    _initializePost();
+  }
+
+  Future<void> _initializePost() async {
+    if (widget.post != null) {
+      // Post ya está cargado
+      _currentPost = widget.post;
+      await _loadReplies();
+      await _loadLikeStatus();
+    } else if (widget.postId != null) {
+      // Cargar post desde ID
+      await _loadPostFromId();
+    } else {
+      // Error: ni post ni postId
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _loadPostFromId() async {
+    if (!mounted) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final post = await _forumService.getPostById(widget.postId!);
+      if (post != null && mounted) {
+        setState(() {
+          _currentPost = post;
+        });
+        await _loadReplies();
+        await _loadLikeStatus();
+      } else if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Post no encontrado'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cargando post: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    }
   }
 
   @override
@@ -70,13 +130,13 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
   }
 
   Future<void> _loadReplies() async {
-    if (!mounted) return;
+    if (!mounted || _currentPost == null) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final replies = await _forumService.getReplies(_currentPost.id);
-      final updatedPost = await _forumService.getPost(_currentPost.id);
+      final replies = await _forumService.getReplies(_currentPost!.id);
+      final updatedPost = await _forumService.getPost(_currentPost!.id);
 
       if (mounted) {
         setState(() {
@@ -113,7 +173,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
           final attachment = await _mediaService.uploadForumMedia(
             file: file,
             userId: _authService.currentUser!.uid,
-            postId: _currentPost.id,
+            postId: _currentPost!.id,
           );
           if (attachment != null) {
             mediaAttachments.add(attachment);
@@ -124,10 +184,11 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
       final user = _authService.currentUser!;
       final reply = ForumReply(
         id: '',
-        postId: _currentPost.id,
+        postId: _currentPost!.id,
         contenido: _replyController.text.trim(),
         autorId: user.uid,
-        autorNombre: user.nombre ?? 'Usuario',
+        autorNombre: user.userName,
+        autorPhotoURL: user.photoURL,
         fechaCreacion: DateTime.now(),
         fechaActualizacion: DateTime.now(),
         mediaAttachments: mediaAttachments,
@@ -159,7 +220,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     if (!_authService.isSignedIn) return;
     
     try {
-      final hasLiked = await _forumService.hasUserLikedPost(_currentPost.id, _authService.currentUser!.uid);
+      final hasLiked = await _forumService.hasUserLikedPost(_currentPost!.id, _authService.currentUser!.uid);
       if (mounted) {
         setState(() {
           _hasUserLiked = hasLiked;
@@ -198,20 +259,20 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     
     setState(() {
       _hasUserLiked = !wasLiked;
-      _currentPost = _currentPost.copyWith(
-        likes: wasLiked ? _currentPost.likes - 1 : _currentPost.likes + 1,
+      _currentPost = _currentPost!.copyWith(
+        likes: wasLiked ? _currentPost!.likes - 1 : _currentPost!.likes + 1,
       );
     });
 
     try {
       // Actualizar en servidor
-      await _forumService.togglePostLike(_currentPost.id, _authService.currentUser!.uid);
+      await _forumService.togglePostLike(_currentPost!.id, _authService.currentUser!.uid);
     } catch (e) {
       // Si hay error, revertir el cambio optimista
       setState(() {
         _hasUserLiked = wasLiked;
-        _currentPost = _currentPost.copyWith(
-          likes: wasLiked ? _currentPost.likes + 1 : _currentPost.likes - 1,
+        _currentPost = _currentPost!.copyWith(
+          likes: wasLiked ? _currentPost!.likes + 1 : _currentPost!.likes - 1,
         );
       });
       
@@ -259,6 +320,17 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Si no hay post cargado, mostrar loading o error
+    if (_currentPost == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Discusión'),
+          centerTitle: true,
+        ),
+        body: const Center(child: LoadingWidget()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Discusión'),
@@ -268,7 +340,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
             PopupMenuButton<String>(
               onSelected: _handlePostAction,
               itemBuilder: (context) => [
-                if (_authService.currentUser!.uid == _currentPost.autorId) ...[
+                if (_authService.currentUser!.uid == _currentPost!.autorId) ...[
                   const PopupMenuItem(
                     value: 'edit',
                     child: Row(
@@ -290,7 +362,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                     ),
                   ),
                 ],
-                if (_authService.currentUser!.uid != _currentPost.autorId)
+                if (_authService.currentUser!.uid != _currentPost!.autorId)
                   const PopupMenuItem(
                     value: 'report',
                     child: Row(
@@ -320,9 +392,9 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                           _buildPostHeader(),
                           const SizedBox(height: 16),
                           _buildPostContent(),
-                          if (_currentPost.mediaAttachments.isNotEmpty) ...[
+                          if (_currentPost!.mediaAttachments.isNotEmpty) ...[
                             const SizedBox(height: 16),
-                            AttachmentsList(attachments: _currentPost.mediaAttachments),
+                            AttachmentsList(attachments: _currentPost!.mediaAttachments),
                           ],
                           const SizedBox(height: 24),
                           _buildPostActions(),
@@ -347,7 +419,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
       children: [
         Row(
           children: [
-            if (_currentPost.isPinned)
+            if (_currentPost!.isPinned)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -370,8 +442,8 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                   ],
                 ),
               ),
-            if (_currentPost.categoria != null) ...[
-              if (_currentPost.isPinned) const SizedBox(width: 8),
+            if (_currentPost!.categoria != null) ...[
+              if (_currentPost!.isPinned) const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -379,7 +451,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _currentPost.categoria!,
+                  _currentPost!.categoria!,
                   style: TextStyle(
                     color: theme.colorScheme.onSecondaryContainer,
                     fontSize: 12,
@@ -392,7 +464,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          _currentPost.titulo,
+          _currentPost!.titulo,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -400,32 +472,22 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            CircleAvatar(
+            UserAvatarFromId(
+              userId: _currentPost!.autorId,
               radius: 16,
-              backgroundColor: theme.primaryColor.withOpacity(0.1),
-              child: Text(
-                _currentPost.autorNombre.isNotEmpty
-                    ? _currentPost.autorNombre[0].toUpperCase()
-                    : 'U',
-                style: TextStyle(
-                  color: theme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
             ),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _currentPost.autorNombre,
+                  _currentPost!.autorNombre,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
-                  DateFormat('dd/MM/yyyy HH:mm').format(_currentPost.fechaCreacion),
+                  DateFormat('dd/MM/yyyy HH:mm').format(_currentPost!.fechaCreacion),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -450,7 +512,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
         ),
       ),
       child: Text(
-        _currentPost.contenido,
+        _currentPost!.contenido,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               height: 1.5,
             ),
@@ -477,7 +539,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${_currentPost.likes}',
+                  '${_currentPost!.likes}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -496,7 +558,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
             ),
             const SizedBox(width: 4),
             Text(
-              '${_currentPost.respuestas}',
+              '${_currentPost!.respuestas}',
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -624,7 +686,6 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                                         Icon(
                                           _getFileIcon(file.path),
                                           size: 32,
-                                          color: theme.colorScheme.primary,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -755,7 +816,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
     final result = await Navigator.push<ForumPost>(
       context,
       MaterialPageRoute(
-        builder: (context) => EditPostScreen(post: _currentPost),
+        builder: (context) => EditPostScreen(post: _currentPost!),
       ),
     );
 
@@ -783,7 +844,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await _forumService.deletePost(_currentPost.id);
+                await _forumService.deletePost(_currentPost!.id);
                 Navigator.pop(context); // Volver a la lista de posts
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Post eliminado')),
@@ -856,7 +917,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
                 Navigator.pop(context);
                 try {
                   // Aquí agregarías la lógica para enviar el reporte
-                  // await _forumService.reportPost(_currentPost.id, selectedReason, reasonController.text);
+                  // await _forumService.reportPost(_currentPost!.id, selectedReason, reasonController.text);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Post reportado. Gracias por tu colaboración.')),
                   );
@@ -903,7 +964,7 @@ class _ForumPostDetailScreenState extends State<ForumPostDetailScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await _forumService.deleteReply(replyId, _currentPost.id);
+                await _forumService.deleteReply(replyId, _currentPost!.id);
                 _loadReplies(); // Recargar respuestas
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Respuesta eliminada')),

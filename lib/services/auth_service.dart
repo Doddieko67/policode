@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:policode/models/usuario_model.dart';
+import 'push_notification_service.dart';
 
 /// Resultado de operaciones de autenticación
 class AuthResult {
@@ -30,6 +32,9 @@ class AuthService {
 
   // Google Sign-In instance
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  
+  // Push notification service
+  final PushNotificationService _pushNotificationService = PushNotificationService();
 
   /// Stream del usuario actual
   Stream<Usuario?> get userStream {
@@ -42,6 +47,24 @@ class AuthService {
   /// Usuario actual
   Usuario? _currentUser;
   Usuario? get currentUser => _currentUser;
+
+  // Lista de avatares disponibles
+  static const List<String> _availableAvatars = [
+    'assets/images/perfil/bird.jpg',
+    'assets/images/perfil/burro.jpg',
+    'assets/images/perfil/cabra.jpg',
+    'assets/images/perfil/dog.jpg',
+    'assets/images/perfil/foca.jpg',
+    'assets/images/perfil/morsa.jpg',
+    'assets/images/perfil/pezHembra.jpg',
+    'assets/images/perfil/pezMacho.jpg',
+  ];
+
+  /// Generar un avatar aleatorio
+  String _getRandomAvatar() {
+    final random = Random();
+    return _availableAvatars[random.nextInt(_availableAvatars.length)];
+  }
 
   /// Verificar si hay usuario autenticado
   bool get isSignedIn => _auth.currentUser != null;
@@ -100,13 +123,15 @@ class AuthService {
           firebaseUser.uid,
           firebaseUser.email!,
           displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
         );
         await _saveUserToFirestore(usuario);
       } else {
         // Actualizar información de Google si es necesario
-        if (usuario.nombre != firebaseUser.displayName) {
+        if (usuario.nombre != firebaseUser.displayName || usuario.photoURL != firebaseUser.photoURL) {
           usuario = usuario.copyWith(
             nombre: firebaseUser.displayName ?? usuario.nombre,
+            photoURL: firebaseUser.photoURL ?? usuario.photoURL,
             ultimaConexion: DateTime.now(),
           );
           await _saveUserToFirestore(usuario);
@@ -118,6 +143,7 @@ class AuthService {
       }
 
       _currentUser = usuario;
+      
       return AuthResult.success(usuario);
     } on FirebaseAuthException catch (e) {
       return AuthResult.error(_getAuthErrorMessage(e));
@@ -157,6 +183,7 @@ class AuthService {
         firebaseUser.uid,
         firebaseUser.email!,
         displayName: nombre,
+        photoURL: firebaseUser.photoURL,
       );
 
       await _saveUserToFirestore(usuario);
@@ -195,6 +222,7 @@ class AuthService {
           firebaseUser.uid,
           firebaseUser.email!,
           displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
         );
         await _saveUserToFirestore(usuario);
       } else {
@@ -215,6 +243,9 @@ class AuthService {
   /// Cerrar sesión
   Future<void> signOut() async {
     try {
+      // Limpiar tokens FCM antes de cerrar sesión
+      await _pushNotificationService.clearTokens();
+      
       // Sign out from Google if user signed in with Google
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.signOut();
@@ -251,6 +282,22 @@ class AuthService {
       return query.docs.isEmpty;
     } catch (e) {
       print('Error verificando username: $e');
+      return false;
+    }
+  }
+
+  /// Verificar si un nombre está disponible (para nombres de usuario)
+  Future<bool> isNameAvailable(String name) async {
+    try {
+      final query = await _firestore
+          .collection('usuarios')
+          .where('nombre', isEqualTo: name)
+          .limit(1)
+          .get();
+      
+      return query.docs.isEmpty;
+    } catch (e) {
+      print('Error verificando disponibilidad de nombre: $e');
       return false;
     }
   }
@@ -432,9 +479,54 @@ class AuthService {
     }
   }
 
+  /// Generar un nombre de usuario único
+  Future<String> _generateUniqueUsername(String baseName) async {
+    String uniqueName = baseName;
+    int counter = 1;
+    
+    while (await _isUsernameExists(uniqueName)) {
+      uniqueName = '$baseName ($counter)';
+      counter++;
+    }
+    
+    return uniqueName;
+  }
+  
+  /// Verificar si un nombre de usuario ya existe
+  Future<bool> _isUsernameExists(String username) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('usuarios')
+          .where('nombre', isEqualTo: username)
+          .limit(1)
+          .get();
+      
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      print('Error verificando nombre de usuario: $e');
+      return false;
+    }
+  }
+
   /// Guardar usuario en Firestore
   Future<void> _saveUserToFirestore(Usuario usuario) async {
     try {
+      // Generar nombre único solo para usuarios nuevos
+      final userDoc = await _firestore.collection('usuarios').doc(usuario.uid).get();
+      
+      if (!userDoc.exists) {
+        // Usuario nuevo, generar nombre único y avatar aleatorio
+        final uniqueName = await _generateUniqueUsername(usuario.nombre ?? usuario.email.split('@').first);
+        final randomAvatar = _getRandomAvatar();
+        usuario = usuario.copyWith(
+          nombre: uniqueName,
+          configuraciones: {
+            'selectedAvatar': randomAvatar,
+            ...?usuario.configuraciones,
+          },
+        );
+      }
+      
       await _firestore
           .collection('usuarios')
           .doc(usuario.uid)
@@ -442,9 +534,9 @@ class AuthService {
       
       // También crear/actualizar en la colección 'users' para el sistema de admin
       // Verificar si el usuario ya existe para no sobrescribir el rol
-      final userDoc = await _firestore.collection('users').doc(usuario.uid).get();
+      final userDocAdmin = await _firestore.collection('users').doc(usuario.uid).get();
       
-      if (userDoc.exists) {
+      if (userDocAdmin.exists) {
         // Usuario existe, solo actualizar campos necesarios sin tocar el rol
         await _firestore
             .collection('users')
@@ -452,7 +544,7 @@ class AuthService {
             .update({
               'email': usuario.email,
               'displayName': usuario.nombre,
-              'photoURL': null,
+              'photoURL': usuario.photoURL,
             });
       } else {
         // Usuario nuevo, crear con rol por defecto
@@ -462,7 +554,7 @@ class AuthService {
             .set({
               'email': usuario.email,
               'displayName': usuario.nombre,
-              'photoURL': null,
+              'photoURL': usuario.photoURL,
               'role': 'user', // Solo establecer rol para usuarios nuevos
               'status': 'active',
               'createdAt': FieldValue.serverTimestamp(),

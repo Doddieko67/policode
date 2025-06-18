@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:policode/models/forum_model.dart';
+import 'notification_service.dart';
+import 'push_notification_service.dart';
+import 'cloud_functions_service.dart';
 
 /// Servicio para manejar las operaciones del foro en Firebase
 class ForumService {
@@ -8,6 +11,9 @@ class ForumService {
   ForumService._internal();
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
+  final PushNotificationService _pushNotificationService = PushNotificationService();
+  final CloudFunctionsService _cloudFunctionsService = CloudFunctionsService();
 
   /// Colección principal de posts del foro
   CollectionReference get _postsCollection => _db.collection('forum_posts');
@@ -152,6 +158,42 @@ class ForumService {
         await _postsCollection.doc(postId).update({
           'likes': FieldValue.increment(1),
         });
+
+        // Obtener información del post y usuario para la notificación
+        final postDoc = await _postsCollection.doc(postId).get();
+        if (postDoc.exists) {
+          final postData = postDoc.data() as Map<String, dynamic>;
+          final postTitle = postData['titulo'] ?? '';
+          final postAuthorId = postData['autorId'] ?? '';
+          
+          // Obtener nombre del usuario que dio like
+          final userDoc = await _db.collection('users').doc(userId).get();
+          final userName = userDoc.data()?['username'] ?? 'Usuario';
+          
+          // Enviar notificación al autor del post (si no es el mismo)
+          if (postAuthorId != userId) {
+            // 1. Crear notificación en base de datos
+            await _notificationService.notifyPostLiked(
+              postId: postId,
+              postTitle: postTitle,
+              postAuthorId: postAuthorId,
+              fromUserId: userId,
+              fromUserName: userName,
+            );
+
+            // 2. Enviar notificación push (Cloud Functions + FCM respaldo)
+            await _sendHybridNotification(
+              targetUserId: postAuthorId,
+              title: 'Like en tu post',
+              body: 'A $userName le gustó tu post "$postTitle"',
+              type: 'post_liked',
+              postId: postId,
+              fromUserId: userId,
+              fromUserName: userName,
+              priority: 'low',
+            );
+          }
+        }
       } else {
         // Quitar like
         await likeDoc.docs.first.reference.delete();
@@ -213,6 +255,38 @@ class ForumService {
         'respuestas': FieldValue.increment(1),
         'fechaActualizacion': Timestamp.now(),
       });
+
+      // Obtener información del post para la notificación
+      final postDoc = await _postsCollection.doc(reply.postId).get();
+      if (postDoc.exists) {
+        final postData = postDoc.data() as Map<String, dynamic>;
+        final postTitle = postData['titulo'] ?? '';
+        final postAuthorId = postData['autorId'] ?? '';
+        
+        // Enviar notificación al autor del post (si no es el mismo que responde)
+        if (postAuthorId != reply.autorId) {
+          // 1. Crear notificación en base de datos
+          await _notificationService.notifyPostReply(
+            postId: reply.postId,
+            postTitle: postTitle,
+            postAuthorId: postAuthorId,
+            fromUserId: reply.autorId,
+            fromUserName: reply.autorNombre,
+          );
+
+          // 2. Enviar notificación push (Cloud Functions + FCM respaldo)
+          await _sendHybridNotification(
+            targetUserId: postAuthorId,
+            title: 'Nueva respuesta',
+            body: '${reply.autorNombre} respondió a tu post "$postTitle"',
+            type: 'post_reply',
+            postId: reply.postId,
+            fromUserId: reply.autorId,
+            fromUserName: reply.autorNombre,
+            priority: 'medium',
+          );
+        }
+      }
       
       return docRef.id;
     } catch (e) {
@@ -508,6 +582,7 @@ class ForumService {
           contenido: respuesta.contenido,
           autorId: respuesta.autorId,
           autorNombre: respuesta.autorNombre,
+          autorPhotoURL: respuesta.autorPhotoURL,
           fechaCreacion: respuesta.fechaCreacion,
           fechaActualizacion: respuesta.fechaActualizacion,
           likes: respuesta.likes,
@@ -645,6 +720,85 @@ class ForumService {
     } catch (e) {
       print('Error obteniendo posts populares: $e');
       return [];
+    }
+  }
+
+  // ===== SISTEMA HÍBRIDO DE NOTIFICACIONES =====
+
+  /// Enviar notificación usando sistema híbrido:
+  /// 1. Intenta Cloud Functions (preferido)
+  /// 2. Si falla, usa FCM directo como respaldo
+  Future<void> _sendHybridNotification({
+    required String targetUserId,
+    required String title,
+    required String body,
+    String? type,
+    String? postId,
+    String? fromUserId,
+    String? fromUserName,
+    String? priority,
+  }) async {
+    try {
+      print('🚀 Intentando envío via Cloud Functions...');
+      
+      // Intento 1: Cloud Functions (v2 con triggers automáticos)
+      final cloudSuccess = await _cloudFunctionsService.sendDirectNotification(
+        targetUserId: targetUserId,
+        title: title,
+        body: body,
+        type: type,
+        postId: postId,
+        fromUserId: fromUserId,
+        fromUserName: fromUserName,
+        priority: priority,
+      );
+
+      if (cloudSuccess) {
+        print('✅ Notificación enviada via Cloud Functions');
+        return;
+      }
+
+      print('⚠️ Cloud Functions falló, usando FCM directo como respaldo...');
+      
+      // Intento 2: FCM directo como respaldo
+      await _pushNotificationService.sendPushOnly(
+        userId: targetUserId,
+        title: title,
+        body: body,
+        data: {
+          'type': type ?? 'system_message',
+          'postId': postId ?? '',
+          'fromUserId': fromUserId ?? '',
+          'fromUserName': fromUserName ?? '',
+          'actionUrl': postId != null ? '/forum-post-detail?postId=$postId' : '',
+          'priority': priority ?? 'medium',
+        },
+      );
+      
+      print('✅ Notificación enviada via FCM directo (respaldo)');
+
+    } catch (e) {
+      print('❌ Error en sistema híbrido de notificaciones: $e');
+      
+      // Último intento: FCM directo
+      try {
+        await _pushNotificationService.sendPushOnly(
+          userId: targetUserId,
+          title: title,
+          body: body,
+          data: {
+            'type': type ?? 'system_message',
+            'postId': postId ?? '',
+            'fromUserId': fromUserId ?? '',
+            'fromUserName': fromUserName ?? '',
+            'actionUrl': postId != null ? '/forum-post-detail?postId=$postId' : '',
+            'priority': priority ?? 'medium',
+          },
+        );
+        print('✅ Notificación enviada via FCM directo (último recurso)');
+      } catch (fcmError) {
+        print('❌ Error total en notificaciones: $fcmError');
+      }
     }
   }
 }

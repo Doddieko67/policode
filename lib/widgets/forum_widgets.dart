@@ -6,6 +6,7 @@ import 'package:policode/services/forum_service.dart';
 import 'package:policode/services/admin_service.dart';
 import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/media_widgets.dart';
+import 'package:policode/widgets/user_avatar.dart';
 import 'package:intl/intl.dart';
 
 /// Widget para mostrar un post del foro en lista
@@ -176,7 +177,7 @@ class _ForumPostCardState extends State<ForumPostCard> {
                 final report = ReportModel(
                   id: '',
                   reporterId: _authService.currentUser!.uid,
-                  reporterName: _authService.currentUser!.nombre ?? 'Usuario',
+                  reporterName: _authService.currentUser!.userName,
                   reportedUserId: widget.post.autorId,
                   reportedUserName: widget.post.autorNombre,
                   contentType: ReportedContentType.post,
@@ -217,19 +218,9 @@ class _ForumPostCardState extends State<ForumPostCard> {
   Widget _buildHeader(ThemeData theme) {
     return Row(
       children: [
-        CircleAvatar(
+        UserAvatarFromId(
+          userId: widget.post.autorId,
           radius: 16,
-          backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
-          child: Text(
-            widget.post.autorNombre.isNotEmpty 
-                ? widget.post.autorNombre[0].toUpperCase() 
-                : 'U',
-            style: TextStyle(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -485,19 +476,9 @@ class _ForumReplyCardState extends State<ForumReplyCard> {
         children: [
           Row(
             children: [
-              CircleAvatar(
+              UserAvatarFromId(
+                userId: widget.reply.autorId,
                 radius: 14,
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
-                child: Text(
-                  widget.reply.autorNombre.isNotEmpty 
-                      ? widget.reply.autorNombre[0].toUpperCase() 
-                      : 'U',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
-                  ),
-                ),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -701,7 +682,7 @@ class _ForumReplyCardState extends State<ForumReplyCard> {
                 final report = ReportModel(
                   id: '',
                   reporterId: _authService.currentUser!.uid,
-                  reporterName: _authService.currentUser!.nombre ?? 'Usuario',
+                  reporterName: _authService.currentUser!.userName,
                   reportedUserId: widget.reply.autorId,
                   reportedUserName: widget.reply.autorNombre,
                   contentType: ReportedContentType.reply,
@@ -793,7 +774,8 @@ class _CreatePostDialogState extends State<CreatePostDialog> {
         titulo: _titleController.text.trim(),
         contenido: _contentController.text.trim(),
         autorId: user.uid,
-        autorNombre: user.nombre ?? 'Usuario',
+        autorNombre: user.userName,
+        autorPhotoURL: user.photoURL,
         fechaCreacion: DateTime.now(),
         fechaActualizacion: DateTime.now(),
         categoria: _selectedCategory,

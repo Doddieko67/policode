@@ -1,8 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:policode/services/auth_service.dart';
 import 'package:policode/services/media_service.dart';
+import 'package:policode/services/push_notification_service.dart';
 import 'package:policode/widgets/custom_button.dart';
 import 'package:policode/widgets/custom_input.dart';
 import 'package:policode/widgets/loading_widgets.dart';
@@ -18,20 +21,40 @@ class ProfileSettingsScreen extends StatefulWidget {
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final AuthService _authService = AuthService();
   final MediaService _mediaService = MediaService();
+  final PushNotificationService _pushService = PushNotificationService();
   final _formKey = GlobalKey<FormState>();
   
   // Controllers
-  final _nameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   
   // Estado
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isCheckingName = false;
   String? _errorMessage;
   String? _successMessage;
-  File? _selectedImage;
-  String? _currentPhotoUrl;
+  String? _nameError;
+  String? _selectedAvatar;
+  String? _originalName;
+
+  // Lista de avatares disponibles
+  final List<String> _availableAvatars = [
+    'assets/images/perfil/bird.jpg',
+    'assets/images/perfil/burro.jpg',
+    'assets/images/perfil/cabra.jpg',
+    'assets/images/perfil/dog.jpg',
+    'assets/images/perfil/foca.jpg',
+    'assets/images/perfil/morsa.jpg',
+    'assets/images/perfil/pezHembra.jpg',
+    'assets/images/perfil/pezMacho.jpg',
+  ];
+
+  /// Generar un avatar aleatorio
+  String _getRandomAvatar() {
+    final random = Random();
+    return _availableAvatars[random.nextInt(_availableAvatars.length)];
+  }
 
   @override
   void initState() {
@@ -41,7 +64,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     super.dispose();
@@ -56,10 +78,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     try {
       final user = _authService.currentUser;
       if (user != null) {
-        _nameController.text = user.nombre ?? '';
-        _usernameController.text = user.username ?? '';
+        _originalName = user.username ?? '';
+        _usernameController.text = _originalName ?? '';
         _emailController.text = user.email;
-        _currentPhotoUrl = user.configuraciones?['photoURL'];
+        _selectedAvatar = user.configuraciones?['selectedAvatar'];
+        
+        // Si el usuario no tiene avatar, asignar uno aleatorio
+        if (_selectedAvatar == null) {
+          _selectedAvatar = _getRandomAvatar();
+          // Guardar el avatar automáticamente
+          _autoSaveAvatar();
+        }
       }
     } catch (e) {
       _setError('Error cargando datos del usuario: $e');
@@ -70,8 +99,59 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  Future<void> _autoSaveAvatar() async {
+    try {
+      await _authService.updateProfile(
+        configuraciones: {
+          'selectedAvatar': _selectedAvatar,
+        },
+      );
+    } catch (e) {
+      print('Error guardando avatar automático: $e');
+      // No mostrar error al usuario, es un proceso automático
+    }
+  }
+
+  Future<void> _checkNameAvailability(String name) async {
+    if (name.trim().isEmpty || name.trim() == _originalName) {
+      setState(() {
+        _nameError = null;
+        _isCheckingName = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingName = true;
+      _nameError = null;
+    });
+
+    try {
+      final isAvailable = await _authService.isUsernameAvailable(name.trim());
+      if (mounted) {
+        setState(() {
+          _nameError = isAvailable ? null : 'Este nombre de usuario ya está en uso';
+          _isCheckingName = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _nameError = 'Error verificando disponibilidad';
+          _isCheckingName = false;
+        });
+      }
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Verificar si hay error de nombre o si se está verificando
+    if (_nameError != null || _isCheckingName) {
+      _setError(_nameError ?? 'Verificando disponibilidad del nombre...');
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -80,35 +160,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     });
 
     try {
-      String? photoURL = _currentPhotoUrl;
-      
-      // Subir nueva imagen si se seleccionó
-      if (_selectedImage != null) {
-        final user = _authService.currentUser;
-        if (user != null) {
-          photoURL = await _mediaService.uploadProfilePhoto(
-            _selectedImage!,
-            user.uid,
-          );
-        }
-      }
-      
       final result = await _authService.updateProfile(
-        nombre: _nameController.text.trim(),
         username: _usernameController.text.trim(),
         configuraciones: {
-          'photoURL': photoURL,
+          'selectedAvatar': _selectedAvatar,
         },
       );
       
       if (!result.success) {
         throw Exception(result.error);
       }
-      
-      setState(() {
-        _currentPhotoUrl = photoURL;
-        _selectedImage = null;
-      });
       
       _setSuccess('Perfil actualizado correctamente');
     } catch (e) {
@@ -120,25 +181,85 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 80,
-      );
 
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
-      }
-    } catch (e) {
-      _setError('Error seleccionando imagen: $e');
-    }
+  void _showAvatarSelector() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Seleccionar Avatar'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GridView.builder(
+                shrinkWrap: true,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 1,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: _availableAvatars.length,
+                itemBuilder: (context, index) {
+                  final avatar = _availableAvatars[index];
+                  final isSelected = _selectedAvatar == avatar;
+                  
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedAvatar = avatar;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
+                          width: isSelected ? 3 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset(
+                          avatar,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              if (_selectedAvatar != null) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _selectedAvatar = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.person_outline, color: Colors.red),
+                    label: const Text('Usar iniciales', style: TextStyle(color: Colors.red)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
   }
+
 
   Future<void> _resetPassword() async {
     final user = _authService.currentUser;
@@ -317,64 +438,78 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       ),
       child: Column(
         children: [
-          Stack(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: theme.primaryColor,
-                  shape: BoxShape.circle,
-                  image: _selectedImage != null
-                      ? DecorationImage(
-                          image: FileImage(_selectedImage!),
-                          fit: BoxFit.cover,
-                        )
-                      : _currentPhotoUrl != null
-                          ? DecorationImage(
-                              image: NetworkImage(_currentPhotoUrl!),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+          GestureDetector(
+            onTap: _showAvatarSelector,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: theme.primaryColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 3,
                 ),
-                child: (_selectedImage == null && _currentPhotoUrl == null)
-                    ? Center(
-                        child: Text(
-                          user?.iniciales ?? 'U',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                image: _selectedAvatar != null
+                    ? DecorationImage(
+                        image: AssetImage(_selectedAvatar!),
+                        fit: BoxFit.cover,
                       )
                     : null,
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+              child: _selectedAvatar == null
+                  ? Stack(
+                      children: [
+                        Center(
+                          child: Text(
+                            user?.iniciales ?? 'U',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // Overlay sutil para indicar que es tocable
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withOpacity(0.1),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.add_a_photo,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.2),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.edit,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
           Text(
-            user?.nombre ?? 'Usuario',
+            user?.userName ?? 'Usuario',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -401,25 +536,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        CustomInput(
-          controller: _nameController,
-          label: 'Nombre completo',
-          prefixIcon: Icons.person_outline,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'El nombre es requerido';
-            }
-            if (value.trim().length < 2) {
-              return 'El nombre debe tener al menos 2 caracteres';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
+        // Campo de username editable con validación
         CustomInput(
           controller: _usernameController,
           label: 'Nombre de usuario',
           prefixIcon: Icons.alternate_email,
+          hint: 'usuario123',
+          onChanged: (value) {
+            // Debounce para evitar muchas consultas
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (_usernameController.text == value) {
+                _checkNameAvailability(value);
+              }
+            });
+          },
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'El nombre de usuario es requerido';
@@ -430,9 +560,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
               return 'Solo se permiten letras, números y guiones bajos';
             }
+            if (_nameError != null) {
+              return _nameError;
+            }
             return null;
           },
-          hint: 'usuario123',
+          suffixWidget: _isCheckingName
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : _nameError != null
+                  ? const Icon(Icons.error_outline, color: Colors.red)
+                  : _usernameController.text.trim() != _originalName && _usernameController.text.trim().isNotEmpty
+                      ? const Icon(Icons.check_circle_outline, color: Colors.green)
+                      : null,
         ),
         const SizedBox(height: 16),
         CustomInput(
@@ -499,6 +642,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
           const SizedBox(height: 12),
         ],
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: CustomButton(
@@ -560,4 +704,61 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       ),
     );
   }
+
+  void _showFCMToken() {
+    final token = _pushService.fcmToken;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Token FCM'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Token para notificaciones push:'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: SelectableText(
+                token ?? 'Token no disponible',
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Este token se usa para enviar notificaciones push a este dispositivo.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+          if (token != null)
+            ElevatedButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: token));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Token copiado al portapapeles')),
+                );
+                Navigator.pop(context);
+              },
+              child: const Text('Copiar'),
+            ),
+        ],
+      ),
+    );
+  }
+
 }

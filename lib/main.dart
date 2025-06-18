@@ -14,11 +14,13 @@ import 'package:policode/screens/admin/admin_dashboard_screen.dart';
 import 'package:policode/screens/admin/reports_management_screen.dart';
 import 'package:policode/screens/admin/regulations_management_screen.dart';
 import 'package:policode/screens/profile_settings_screen.dart';
+import 'package:policode/screens/username_setup_screen.dart';
 import 'package:policode/screens/admin/users_management_screen.dart';
 import 'package:policode/screens/admin/admin_logs_screen.dart';
 import 'package:policode/screens/admin/migration_screen.dart';
 import 'package:policode/screens/admin/posts_management_screen.dart';
 import 'package:policode/screens/notifications_screen.dart';
+import 'package:policode/screens/forum_post_detail_screen.dart';
 import 'package:policode/services/firebase_config.dart';
 
 import 'package:policode/core/themes/app_theme.dart';
@@ -31,6 +33,8 @@ import 'package:policode/widgets/loading_widgets.dart';
 // Services
 import 'services/auth_service.dart';
 import 'services/reglamento_service.dart';
+import 'services/push_notification_service.dart';
+import 'utils/fcm_helper.dart';
 
 
 void main() async {
@@ -69,6 +73,17 @@ void main() async {
 
   await Firebase.initializeApp();
   await FirebaseConfig.initialize();
+  
+  // Inicializar notificaciones push (FCM)
+  await PushNotificationService().initialize();
+  
+  // En modo debug, imprimir el token FCM después de un breve delay
+  if (const bool.fromEnvironment('dart.vm.product') == false) {
+    Future.delayed(const Duration(seconds: 2), () {
+      FCMHelper.printFCMToken();
+    });
+  }
+  
   // Ejecutar app con manejo de errores
   runApp(const PoliCodeApp());
 }
@@ -137,6 +152,7 @@ class PoliCodeApp extends StatelessWidget {
       '/reglamentos': (context) => const ReglamentosScreen(),
       '/mis-posts': (context) => const MisPostsScreen(),
       '/profile-settings': (context) => const ProfileSettingsScreen(),
+      '/username-setup': (context) => const UsernameSetupScreen(),
       // Admin routes
       '/admin': (context) => const AdminDashboardScreen(),
       '/admin/reports': (context) => const ReportsManagementScreen(),
@@ -146,6 +162,15 @@ class PoliCodeApp extends StatelessWidget {
       '/admin/migration': (context) => const MigrationScreen(),
       '/admin/posts': (context) => const PostsManagementScreen(),
       '/notifications': (context) => const NotificationsScreen(),
+      '/forum-post-detail': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+        final postId = args?['postId'] as String?;
+        if (postId != null) {
+          return ForumPostDetailScreen.fromId(postId: postId);
+        }
+        // Si no hay postId, regresar a foro
+        return const ForumScreen();
+      },
     };
   }
 }
@@ -236,8 +261,15 @@ class _AppInitializerState extends State<AppInitializer> {
     final authService = AuthService();
 
     if (authService.isSignedIn) {
-      // Usuario ya autenticado -> ir a home
-      Navigator.pushReplacementNamed(context, '/home');
+      final user = authService.currentUser;
+      
+      // Verificar si el usuario necesita configurar su username
+      if (user != null && !user.perfilCompleto) {
+        Navigator.pushReplacementNamed(context, '/username-setup');
+      } else {
+        // Usuario completo -> ir a home
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     } else {
       // No hay usuario -> ir a auth
       Navigator.pushReplacementNamed(context, '/auth');
